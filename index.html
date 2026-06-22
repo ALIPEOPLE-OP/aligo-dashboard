@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알리고 운영 현황</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="data.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+/* ══ 헤더 ══ */
+.header {
+  background: #0f172a;
+  padding: 0 32px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.header-brand h1 { font-size: 17px; font-weight: 800; color: #f8fafc; letter-spacing: -.3px; }
+.header-brand .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.updated-chip {
+  font-size: 11px; color: #64748b;
+  background: rgba(255,255,255,.05);
+  padding: 5px 12px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.btn-refresh {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 8px;
+  background: #2563eb; color: white;
+  border: none; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+}
+.btn-refresh:hover { background: #1d4ed8; }
+.btn-refresh.loading { background: #334155; cursor: not-allowed; }
+.spin { display:inline-block; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══ 탭 ══ */
+.tabs {
+  background: #0f172a;
+  padding: 0 32px;
+  display: flex; gap: 4px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.tab-btn {
+  padding: 14px 18px;
+  font-size: 13px; font-weight: 600;
+  color: #64748b; border: none; background: none; cursor: pointer;
+  border-bottom: 3px solid transparent; margin-bottom: -1px;
+  transition: all .15s;
+}
+.tab-btn:hover { color: #94a3b8; }
+.tab-btn.on { color: #60a5fa; border-bottom-color: #60a5fa; font-weight: 800; }
+
+/* ══ 콘텐츠 영역 ══ */
+.content { background: #f1f5f9; min-height: calc(100vh - 113px); }
+.page { display: none; padding: 28px 32px; max-width: 1440px; margin: 0 auto; }
+.page.on { display: block; }
+
+/* ══ 섹션 라벨 ══ */
+.sec-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.2px;
+  text-transform: uppercase; color: #94a3b8;
+  margin: 28px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content:''; flex:1; height:1px; background:#e2e8f0; }
+.sec-label:first-child { margin-top: 0; }
+
+/* ══ KPI 카드 ══ */
+.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+
+.kpi-card {
+  border-radius: 12px; padding: 12px 14px 11px;
+  position: relative; overflow: hidden;
+  cursor: default;
+}
+.kpi-card.blue  { background: linear-gradient(135deg, #1d4ed8, #3b82f6); }
+.kpi-card.green { background: linear-gradient(135deg, #047857, #10b981); }
+.kpi-card.amber { background: linear-gradient(135deg, #b45309, #f59e0b); }
+.kpi-card.red   { background: linear-gradient(135deg, #991b1b, #ef4444); }
+.kpi-card.purple{ background: linear-gradient(135deg, #5b21b6, #8b5cf6); }
+
+.kpi-card::after {
+  content: '';
+  position: absolute; right: -20px; bottom: -20px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(255,255,255,.07);
+}
+.kpi-label {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,.7);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kpi-value {
+  font-size: 26px; font-weight: 900; color: white;
+  letter-spacing: -1.5px; line-height: 1;
+}
+.kpi-unit { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.65); margin-left: 1px; }
+.kpi-sub { font-size: 10px; color: rgba(255,255,255,.6); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi-badge {
+  display: inline-flex; align-items: center;
+  margin-top: 5px; padding: 2px 7px;
+  border-radius: 20px; font-size: 10px; font-weight: 700;
+  background: rgba(255,255,255,.2); color: white;
+}
+
+/* ══ 일반 카드 ══ */
+.card {
+  background: white; border-radius: 16px; padding: 22px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.card-title { font-size: 13px; font-weight: 800; color: #0f172a; }
+.card-meta { font-size: 11px; color: #94a3b8; }
+
+/* ══ 그리드 ══ */
+.g2   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3   { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; }
+.g3eq { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ══ 가로 막대 ══ */
+.bar-row { margin-bottom: 11px; }
+.bar-row:last-child { margin-bottom: 0; }
+.bar-info { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.bar-name { font-size: 12px; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+.bar-cnt { font-size: 12px; font-weight: 800; color: #1e293b; }
+.bar-cnt small { font-size: 10px; color: #94a3b8; font-weight: 400; margin-left: 3px; }
+.bar-bg { height: 7px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+.bar-fg { height: 100%; border-radius: 4px; transition: width 1s ease; }
+
+/* ══ 리스트 ══ */
+.list-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid #f8fafc; font-size: 13px;
+}
+.list-row:last-child { border-bottom: none; }
+.list-label { color: #475569; font-weight: 500; }
+.list-val { font-weight: 800; }
+.g  { color: #059669; } .y { color: #d97706; } .r { color: #dc2626; }
+.b  { color: #2563eb; } .gr{ color: #94a3b8; }
+
+/* ══ 대형 숫자 ══ */
+.hero-num { text-align: center; padding: 18px 0; }
+.hero-num .n { font-size: 56px; font-weight: 900; letter-spacing: -3px; line-height: 1; color: #0f172a; }
+.hero-num .u { font-size: 22px; color: #94a3b8; }
+.hero-num .d { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+
+/* ══ 토스트 ══ */
+.toast {
+  position: fixed; bottom: 28px; right: 28px;
+  padding: 13px 22px; border-radius: 12px;
+  font-size: 13px; font-weight: 700; color: white;
+  background: #1e293b; box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  z-index: 9999;
+  transform: translateY(80px); opacity: 0;
+  transition: transform .3s, opacity .3s; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok   { background: #059669; }
+.toast.info { background: #2563eb; }
+.toast.warn { background: #d97706; }
+.toast.err  { background: #dc2626; }
+
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .g3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 720px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .g2, .g3, .g3eq { grid-template-columns: 1fr; }
+  .page { padding: 16px; }
+  .header, .tabs { padding: 0 16px; }
+}
+
+/* ══ 지표 관리 탭 ══ */
+.mgmt-status-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.status-card { background: white; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.status-card .sc-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: #94a3b8; margin-bottom: 8px; }
+.status-card .sc-value { font-size: 24px; font-weight: 900; color: #94a3b8; }
+.status-card .sc-sub   { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+.all-upload-box { background: white; border-radius: 12px; padding: 18px 20px; border: 2px dashed #3b82f6; }
+.mgmt-form-row  { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+
+.form-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.form-card.cs-top     { border-top: 3px solid #2563eb; }
+.form-card.caller-top { border-top: 3px solid #7c3aed; }
+.form-card.biz-top    { border-top: 3px solid #0891b2; }
+.fc-title { font-size: 13px; font-weight: 800; margin-bottom: 14px; color: #0f172a; }
+
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.form-input { width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; transition: border-color .2s; font-family: inherit; }
+.form-input:focus { border-color: #3b82f6; }
+
+.btn-save { width: 100%; padding: 9px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; margin-bottom: 6px; font-family: inherit; }
+.btn-save:hover { background: #1d4ed8; }
+.btn-save.purple { background: #7c3aed; } .btn-save.purple:hover { background: #6d28d9; }
+.btn-save.cyan   { background: #0891b2; } .btn-save.cyan:hover   { background: #0e7490; }
+
+.ds-divider { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; text-align: center; margin: 10px 0 6px; position: relative; }
+.ds-divider::before, .ds-divider::after { content:''; position:absolute; top:50%; width:35%; height:1px; background:#e2e8f0; }
+.ds-divider::before { left:0; } .ds-divider::after { right:0; }
+
+.upload-zone { border: 2px dashed #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; transition: all .2s; background: #fafafa; }
+.upload-zone:hover, .upload-zone.drag-over { border-color: #3b82f6; background: #eff6ff; }
+.upload-zone .uz-icon  { font-size: 20px; margin-bottom: 2px; }
+.upload-zone .uz-title { font-size: 12px; font-weight: 700; color: #334155; }
+.upload-zone .uz-sub   { font-size: 10px; color: #94a3b8; }
+.upload-result { margin-top: 6px; padding: 7px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; display: none; }
+.upload-result.ok  { background: #f0fdf4; color: #065f46; border: 1px solid #bbf7d0; }
+.upload-result.err { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
+
+.history-card { background: white; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.ht { font-size: 13px; font-weight: 800; color: #0f172a; }
+.btn-clear { padding: 5px 12px; background: #f1f5f9; border: 1.5px solid #e2e8f0; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; color: #64748b; }
+.btn-clear:hover { background: #e2e8f0; }
+.htable { width: 100%; border-collapse: collapse; }
+.htable th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.htable td { padding: 9px 12px; font-size: 12px; border-bottom: 1px solid #f1f5f9; }
+.htable tr:last-child td { border-bottom: none; }
+.htable tr:hover td { background: #f8fafc; }
+.badge-type { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.badge-cs     { background:#dbeafe; color:#1e40af; }
+.badge-caller { background:#ede9fe; color:#5b21b6; }
+.badge-biz    { background:#cffafe; color:#0e7490; }
+.btn-del-h { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
+.btn-del-h:hover { color: #ef4444; background: #fee2e2; }
+
+@media(max-width:900px){ .mgmt-status-grid, .mgmt-form-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══ 헤더 ══ -->
+<div class="header">
+  <div class="header-brand">
+    <div class="dot"></div>
+    <h1>알리고 운영 현황</h1>
+  </div>
+  <div class="header-right">
+    <span class="updated-chip" id="updChip">데이터 로딩 중...</span>
+    <button class="btn-refresh" id="btnRefresh" onclick="triggerRefresh()">
+      <span id="refreshIcon">🔄</span> 새로고침
+    </button>
+  </div>
+</div>
+
+<!-- ══ 탭 ══ -->
+<div class="tabs">
+  <button class="tab-btn on"  id="tab-s" onclick="go('s')">📊 핵심 요약</button>
+  <button class="tab-btn"     id="tab-c" onclick="go('c')">💬 CS 상담</button>
+  <button class="tab-btn"     id="tab-r" onclick="go('r')">🔐 인증 현황</button>
+  <button class="tab-btn"     id="tab-m" onclick="go('m')">⚙️ 지표 관리</button>
+</div>
+
+<!-- ══ 콘텐츠 ══ -->
+<div class="content">
+
+  <!-- 탭 S: 요약 -->
+  <div class="page on" id="pg-s">
+
+    <div class="sec-label">핵심 지표</div>
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">총 문의 건수</div>
+        <div><span class="kpi-value" id="k1">—</span><span class="kpi-unit">건</span></div>
+        <div class="kpi-sub" id="k1s">—</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">응답 완료율</div>
+        <div><span class="kpi-value" id="k2">—</span><span class="kpi-unit">%</span></div>
+        <div class="kpi-badge" id="k2b">—</div>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-label">평균 응답 시간</div>
+        <div><span class="kpi-value" id="k3">—</span><span class="kpi-unit">h</span></div>
+        <div class="kpi-badge" id="k3b">—</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">미처리 문의</div>
+        <div><span class="kpi-value" id="k4">—</span><span class="kpi-unit">건</span></div>
+        <div class="kpi-badge" id="k4b">—</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">인증 검수 대기</div>
+        <div><span class="kpi-value" id="k5">—</span><span class="kpi-unit">건</span></div>
+        <div class="kpi-sub">발신번호 + 사업자</div>
+      </div>
+    </div>
+
+    <div class="sec-label">트렌드 (최근 30일)</div>
+    <div class="g3">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">일별 문의 건수</span>
+          <span class="card-meta" id="trendMeta"></span>
+        </div>
+        <canvas id="chartTrend" height="105"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">문의 유형 Top 5</span></div>
+        <div id="catBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">응답 완료율</span></div>
+        <canvas id="chartRate" height="160"></canvas>
+      </div>
+    </div>
+
+    <div class="sec-label">상담 품질</div>
+    <div class="g3eq">
+      <div class="card">
+        <div class="card-head"><span class="card-title">응답 시간 분포</span></div>
+        <div id="timeBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">담당자별 처리량</span></div>
+        <div id="agentBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">인증 처리 요약</span></div>
+        <div id="certSummary"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 탭 C: CS -->
+  <div class="page" id="pg-c">
+
+    <div class="sec-label">상담 현황</div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">전체 통계</span></div>
+        <div id="csStatList"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">문의 채널 비율</span></div>
+        <canvas id="chartChannel" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="sec-label">문의 유형 분석</div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">분류별 건수 Top 10</span></div>
+        <div id="catBarsDetail"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">응답 상태</span></div>
+        <canvas id="chartStatus" height="180"></canvas>
+        <div id="statusList" style="margin-top:16px"></div>
+      </div>
+    </div>
+
+    <div class="sec-label">응답 시간 분석</div>
+    <div class="g3eq">
+      <div class="card">
+        <div class="card-head"><span class="card-title">시간대별 분포</span></div>
+        <div id="timeBarsDetail"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">담당자별 처리 상세</span></div>
+        <div id="agentDetail"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">회원 유형별 문의</span></div>
+        <canvas id="chartMember" height="200"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 탭 R: 인증 -->
+  <div class="page" id="pg-r">
+
+    <div class="sec-label">발신번호 인증</div>
+    <div class="g3">
+      <div class="card">
+        <div class="hero-num">
+          <div class="n b" id="callerTotal">—</div>
+          <div class="u">건</div>
+          <div class="d">전체 발신번호 인증 요청</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">상태별 현황</span></div>
+        <div id="callerList"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">처리 비율</span></div>
+        <canvas id="chartCaller" height="180"></canvas>
+      </div>
+    </div>
+
+    <div class="sec-label">사업자 인증</div>
+    <div class="g3">
+      <div class="card">
+        <div class="hero-num">
+          <div class="n b" id="bizTotal">—</div>
+          <div class="u">건</div>
+          <div class="d">전체 사업자 인증 요청</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">상태별 현황</span></div>
+        <div id="bizList"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">처리 비율</span></div>
+        <canvas id="chartBiz" height="180"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 탭 M: 지표 관리 -->
+  <div class="page" id="pg-m">
+
+    <div class="sec-label">현재 데이터 현황</div>
+    <div class="mgmt-status-grid">
+      <div class="status-card">
+        <div class="sc-label">📋 CS 상담</div>
+        <div class="sc-value" id="sc-cs-value">—</div>
+        <div class="sc-sub"  id="sc-cs-sub">로드 안 됨</div>
+      </div>
+      <div class="status-card">
+        <div class="sc-label">📞 발신번호 인증</div>
+        <div class="sc-value" id="sc-caller-value">—</div>
+        <div class="sc-sub"  id="sc-caller-sub">로드 안 됨</div>
+      </div>
+      <div class="status-card">
+        <div class="sc-label">🏢 사업자 인증</div>
+        <div class="sc-value" id="sc-biz-value">—</div>
+        <div class="sc-sub"  id="sc-biz-sub">로드 안 됨</div>
+      </div>
+    </div>
+
+    <div class="sec-label">Google Apps Script 자동 연동</div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap">
+
+        <!-- GAS 연결 안내 -->
+        <div style="flex:1;min-width:260px">
+          <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:10px">🔗 연결 구조</div>
+          <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;font-size:12px;color:#475569;line-height:2">
+            구글 스프레드시트<br>
+            <span style="color:#94a3b8;margin-left:8px">↓ GAS 트리거 (매일 오전 8시)</span><br>
+            Google Drive → data.js 저장<br>
+            <span style="color:#94a3b8;margin-left:8px">↓ Drive 데스크톱 앱 자동 동기화</span><br>
+            <strong style="color:#059669">대시보드에 자동 반영 ✅</strong>
+          </div>
+          <div style="margin-top:10px;padding:10px 14px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;font-size:11px;color:#1d4ed8">
+            💡 GAS 설정은 <strong>GAS_Push_설정가이드.txt</strong> 파일을 참고하세요
+          </div>
+        </div>
+
+        <!-- 수동 새로고침 -->
+        <div style="min-width:220px">
+          <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:10px">🔄 수동 새로고침</div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:12px;line-height:1.6">
+            지금 당장 최신 데이터로 갱신하려면<br>
+            아래 버튼을 눌러주세요.<br>
+            <span style="color:#94a3b8">(갱신 서버가 실행 중이어야 합니다)</span>
+          </div>
+          <button class="btn-save" style="margin-bottom:8px" onclick="triggerRefresh()">🔄 지금 바로 갱신</button>
+          <div style="font-size:11px;color:#94a3b8">갱신 서버: <code style="background:#f1f5f9;padding:1px 6px;border-radius:4px">localhost:7799</code></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="sec-label">담당자 설정</div>
+    <div class="mgmt-form-row">
+
+      <div class="form-card cs-top">
+        <div class="fc-title">📋 CS 상담</div>
+        <div class="form-group">
+          <label>담당자 이름</label>
+          <input type="text" class="form-input" id="csAdminName" placeholder="이름 입력">
+        </div>
+        <div class="form-group">
+          <label>시트 탭 이름</label>
+          <input type="text" class="form-input" id="csSheetName" placeholder="CS상담">
+        </div>
+        <button class="btn-save" onclick="saveCSConfig()">💾 저장</button>
+      </div>
+
+      <div class="form-card caller-top">
+        <div class="fc-title">📞 발신번호 인증</div>
+        <div class="form-group">
+          <label>담당자 이름</label>
+          <input type="text" class="form-input" id="callerAdminName" placeholder="이름 입력">
+        </div>
+        <div class="form-group">
+          <label>시트 탭 이름</label>
+          <input type="text" class="form-input" id="callerSheetName" placeholder="인증-발신번호">
+        </div>
+        <button class="btn-save purple" onclick="saveCallerConfig()">💾 저장</button>
+      </div>
+
+      <div class="form-card biz-top">
+        <div class="fc-title">🏢 사업자 인증</div>
+        <div class="form-group">
+          <label>담당자 이름</label>
+          <input type="text" class="form-input" id="bizAdminName" placeholder="이름 입력">
+        </div>
+        <div class="form-group">
+          <label>시트 탭 이름</label>
+          <input type="text" class="form-input" id="bizSheetName" placeholder="인증-사업자">
+        </div>
+        <button class="btn-save cyan" onclick="saveBizConfig()">💾 저장</button>
+      </div>
+
+    </div>
+
+    <div class="sec-label">채팅상담 데이터 업로드</div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+        <div style="flex:1;min-width:260px">
+          <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:8px">💬 채팅상담 엑셀/CSV 업로드</div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:12px;line-height:1.7">
+            채팅상담 데이터는 GAS 시트와 별도로<br>엑셀(.xlsx) 또는 CSV 파일로 직접 업로드할 수 있어요.
+          </div>
+          <div class="upload-zone" id="chatUploadZone" onclick="document.getElementById('chatFileInput').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleChatDrop(event)">
+            <div class="uz-icon">📂</div>
+            <div class="uz-title">클릭하거나 파일을 여기에 드래그</div>
+            <div class="uz-sub">.xlsx · .xls · .csv 지원</div>
+          </div>
+          <input type="file" id="chatFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleChatFile(this.files[0])">
+          <div class="upload-result" id="chatUploadResult"></div>
+        </div>
+        <div style="min-width:180px">
+          <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:8px">현재 상태</div>
+          <div style="background:#f8fafc;border-radius:10px;padding:14px;font-size:12px;color:#475569">
+            <div style="margin-bottom:6px">채팅 데이터: <strong id="chatStatusCount" style="color:#94a3b8">0건</strong></div>
+            <div style="font-size:11px;color:#94a3b8" id="chatStatusDate">업로드된 파일 없음</div>
+          </div>
+          <button class="btn-save" style="margin-top:10px;background:#ef4444" onclick="clearChatData()">🗑 채팅 데이터 초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-label">GAS URL 설정</div>
+    <div class="card">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Apps Script URL (세 시트 공통)</label>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <input type="text" class="form-input" id="gasUrlInput" placeholder="https://script.google.com/a/macros/..." style="flex:1">
+          <button class="btn-save" style="width:auto;padding:8px 18px;margin:0;white-space:nowrap" onclick="saveGasUrl()">💾 저장</button>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:5px">현재: <span id="gasUrlDisplay" style="color:#2563eb;word-break:break-all"></span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /content -->
+
+<script>
+// ══════════════════════════════════════════
+//  설정 — GAS URL
+// ══════════════════════════════════════════
+const GAS_URL    = 'https://script.google.com/a/macros/alipeople.kr/s/AKfycbzxW4_uDliJgHApFEdch6JHFelnT61oS74MYpU2oYxfFAcslfwv4l9ngYt5ZdDpDUKqvQ/exec';
+const SERVER_URL = 'http://localhost:7799';
+const TABS_KEY   = ['s','c','r','m'];
+const C = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#6366f1'];
+
+// 데이터
+let csData=[], callerData=[], bizData=[], chatData=[];
+const charts = {};
+
+// ══════════════════════════════════════════
+//  유틸
+// ══════════════════════════════════════════
+const cl  = s => s ? String(s).normalize('NFC').trim() : '';
+const has = (s,kw) => cl(s).includes(kw);
+const ds  = s => s ? String(s).slice(0,10) : '';
+const pd  = s => { if(!s) return null; const d=new Date(String(s).replace(' ','T')); return isNaN(d)?null:d; };
+const cut = n => { const d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
+const kst = iso => iso ? new Date(iso).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}) : '—';
+const topN = (o,n) => Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n);
+
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type?' '+type:'');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function bars(items, maxV, colors) {
+  return items.map(([name,cnt],i) => `
+    <div class="bar-row">
+      <div class="bar-info">
+        <span class="bar-name">${name}</span>
+        <span class="bar-cnt">${cnt.toLocaleString()}<small>건</small></span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fg" style="width:${(cnt/maxV*100).toFixed(1)}%;background:${(colors||C)[i%((colors||C).length)]}"></div>
+      </div>
+    </div>`).join('');
+}
+
+function listRows(items) {
+  return items.map(([label,val,cls])=>`
+    <div class="list-row">
+      <span class="list-label">${label}</span>
+      <span class="list-val ${cls||''}">${val}</span>
+    </div>`).join('');
+}
+
+function dc(id) {
+  if(charts[id]){ try{charts[id].destroy();}catch(e){} delete charts[id]; }
+}
+
+// ══════════════════════════════════════════
+//  데이터 로드 — data.js 프리로드 우선
+// ══════════════════════════════════════════
+function loadPreloaded() {
+  const chip = document.getElementById('updChip');
+
+  // data.js 자체가 로드 안 된 경우
+  if (typeof window._PRELOADED === 'undefined') {
+    chip.textContent = '⚠️ data.js 로드 실패 — 파일 위치를 확인하세요';
+    chip.style.cssText = 'color:#fca5a5;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3)';
+    return false;
+  }
+
+  csData     = window._PRELOADED.cs     || [];
+  callerData = window._PRELOADED.caller || [];
+  bizData    = window._PRELOADED.biz    || [];
+
+  // localStorage에서 채팅 데이터 불러오기
+  try {
+    const saved = localStorage.getItem('op_chat_data');
+    chatData = saved ? JSON.parse(saved) : (window._PRELOADED.chat || []);
+  } catch(e) { chatData = []; }
+
+  // 데이터가 빈 경우
+  if (csData.length === 0 && callerData.length === 0) {
+    chip.textContent = '⚠️ data.js는 로드됐지만 데이터가 비어있음';
+    chip.style.cssText = 'color:#fcd34d;background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.3)';
+    return false;
+  }
+
+  const upd  = window._PRELOADED.updatedAt;
+  const info = `CS ${csData.length.toLocaleString()}건 · 인증 ${(callerData.length+bizData.length).toLocaleString()}건`;
+  chip.textContent = upd ? `갱신: ${kst(upd)}` : info;
+  chip.title = info;   // 마우스 올리면 건수 표시
+  return true;
+}
+
+// ══════════════════════════════════════════
+//  새로고침 — 로컬 서버(7799) → 새탭 우회
+// ══════════════════════════════════════════
+async function triggerRefresh() {
+  const btn  = document.getElementById('btnRefresh');
+  const icon = document.getElementById('refreshIcon');
+  btn.classList.add('loading');
+  icon.className = 'spin';
+  icon.textContent = '⟳';
+
+  // 1) 서버 살아있는지 먼저 확인
+  let serverAlive = false;
+  try {
+    const check = await fetch(SERVER_URL + '/status', { signal: AbortSignal.timeout(3000) });
+    serverAlive = check.ok;
+  } catch(e) {}
+
+  if (!serverAlive) {
+    toast('⚠️ 갱신 서버가 실행 중이 아닙니다. "대시보드+갱신서버 실행.bat"을 먼저 실행해주세요.', 'warn');
+    btn.classList.remove('loading');
+    icon.className = '';
+    icon.textContent = '🔄';
+    return;
+  }
+
+  // 2) 서버가 살아있으면 /update 새 탭으로 열고 30초 후 새로고침
+  toast('⏳ 데이터 갱신 중... (약 20~30초 소요)', 'info');
+  window.open(SERVER_URL + '/update', '_blank');
+  let countdown = 30;
+  const timer = setInterval(() => {
+    countdown--;
+    const chip = document.getElementById('updChip');
+    if (chip) chip.textContent = `갱신 중... ${countdown}초`;
+    if (countdown <= 0) {
+      clearInterval(timer);
+      toast('✅ 갱신 완료! 페이지를 새로고침합니다.', 'ok');
+      setTimeout(() => location.reload(), 800);
+    }
+  }, 1000);
+}
+
+// ══════════════════════════════════════════
+//  탭 전환
+// ══════════════════════════════════════════
+function go(id) {
+  TABS_KEY.forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('on', t===id);
+    document.getElementById('pg-'+t).classList.toggle('on', t===id);
+  });
+}
+
+// ══════════════════════════════════════════
+//  렌더 전체
+// ══════════════════════════════════════════
+function renderAll() {
+  renderSummary();
+  renderCS();
+  renderCert();
+}
+
+// ══════════════════════════════════════════
+//  탭 S: 핵심 요약
+// ══════════════════════════════════════════
+function renderSummary() {
+  const cs  = csData, cl2 = callerData, bz = bizData;
+  const cut30 = cut(30);
+
+  const answered = cs.filter(r=>has(r['답변 상태'],'답변완료'));
+  const pending  = cs.filter(r=>!has(r['답변 상태'],'답변완료'));
+  const rate     = cs.length ? (answered.length/cs.length*100).toFixed(1) : 0;
+
+  const times = [];
+  answered.forEach(r => {
+    const q=pd(r['문의 일시']), a=pd(r['답변 일시']);
+    if(q&&a){ const h=(a-q)/3600000; if(h>0&&h<72) times.push(h); }
+  });
+  const avgH = times.length ? (times.reduce((s,v)=>s+v,0)/times.length).toFixed(1) : '—';
+
+  const cWait = cl2.filter(r=>has(r['인증 상태'],'검수대기')||has(r['인증 상태'],'검수중')).length;
+  const bWait = bz.filter(r=>has(r['인증 상태'],'대기')||has(r['인증 상태'],'진행중')).length;
+
+  // KPI
+  const cs30 = cs.filter(r=>ds(r['문의 일시'])>=cut30);
+  document.getElementById('k1').textContent = cs.length.toLocaleString();
+  document.getElementById('k1s').textContent = `최근 30일 ${cs30.length.toLocaleString()}건`;
+  document.getElementById('k2').textContent = rate;
+  document.getElementById('k2b').textContent = rate>=98?'🟢 우수':rate>=90?'🟡 양호':'🔴 개선 필요';
+  document.getElementById('k3').textContent = avgH;
+  document.getElementById('k3b').textContent = avgH==='—'?'—':avgH<=8?'🟢 빠름':avgH<=24?'🟡 보통':'🔴 느림';
+  document.getElementById('k4').textContent = pending.length;
+  document.getElementById('k4b').textContent = pending.length===0?'🟢 없음':pending.length<=10?'🟡 확인 필요':'🔴 처리 필요';
+  document.getElementById('k5').textContent = (cWait+bWait).toLocaleString();
+
+  // 트렌드 차트 — 12주 주간 집계
+  const getWeekMonday = (dateStr) => {
+    const d = new Date(dateStr);
+    const day = d.getDay(); // 0=일, 1=월 ...
+    const diff = (day === 0) ? -6 : 1 - day; // 월요일로 보정
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0, 10);
+  };
+  const cut84 = cut(84); // 12주 = 84일
+  const weekMap = {};
+  cs.forEach(r => {
+    const d = ds(r['문의 일시']);
+    if (d >= cut84) {
+      const wk = getWeekMonday(d);
+      weekMap[wk] = (weekMap[wk] || 0) + 1;
+    }
+  });
+  const wkLabels = Object.keys(weekMap).sort().slice(-12);
+  const wkVals   = wkLabels.map(w => weekMap[w]);
+  const wkShort  = wkLabels.map(w => w.slice(5).replace('-', '/'));
+  const wkAvg    = Math.round(wkVals.reduce((a,b)=>a+b,0) / (wkVals.length||1));
+  document.getElementById('trendMeta').textContent = wkLabels.length + '주';
+  dc('t'); charts.t = new Chart(document.getElementById('chartTrend'), {
+    type: 'bar',
+    data: {
+      labels: wkShort,
+      datasets: [
+        {
+          label: '주간 문의',
+          data: wkVals,
+          backgroundColor: wkVals.map(v => v >= wkAvg ? 'rgba(96,165,250,.55)' : 'rgba(96,165,250,.25)'),
+          borderColor: '#60a5fa', borderWidth: 1.5, borderRadius: 5
+        },
+        {
+          label: '12주 평균',
+          data: wkLabels.map(() => wkAvg),
+          type: 'line', borderColor: '#f59e0b', borderWidth: 2,
+          borderDash: [5, 3], pointRadius: 0, tension: 0, fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + '건'
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { font: { size: 10 }, maxRotation: 0 }, grid: { display: false } },
+        y: { ticks: { font: { size: 10 } }, beginAtZero: true }
+      }
+    }
+  });
+
+  // 문의 유형 막대
+  const catMap={};
+  cs.forEach(r=>{ let c=cl(r['분류1'])||'미분류'; if(!c.match(/^[가-힣\s]+$/)) c='스마트문자 문의'; catMap[c]=(catMap[c]||0)+1; });
+  const catTop=topN(catMap,5); const catMax=catTop[0]?.[1]||1;
+  document.getElementById('catBars').innerHTML = bars(catTop,catMax);
+
+  // 완료율 도넛
+  dc('r2'); charts.r2 = new Chart(document.getElementById('chartRate'),{
+    type:'doughnut', data:{labels:['완료','미처리'],datasets:[{data:[answered.length,pending.length],backgroundColor:['#10b981','#ef4444'],borderWidth:0}]},
+    options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:12}}}}
+  });
+
+  // 응답 시간 분포
+  const t2=times.filter(h=>h<=2).length, t8=times.filter(h=>h>2&&h<=8).length;
+  const t24=times.filter(h=>h>8&&h<=24).length, tOv=times.filter(h=>h>24).length;
+  const tTot=times.length||1, tMax=Math.max(t2,t8,t24,tOv)||1;
+  const tItems=[['2시간 이내',t2,'#10b981'],['2~8시간',t8,'#3b82f6'],['8~24시간',t24,'#f59e0b'],['24시간 초과',tOv,'#ef4444']];
+  document.getElementById('timeBars').innerHTML = tItems.map(([n,c,col])=>`
+    <div class="bar-row">
+      <div class="bar-info"><span class="bar-name">${n}</span>
+        <span class="bar-cnt" style="color:${col}">${(c/tTot*100).toFixed(0)}%<small> ${c}건</small></span></div>
+      <div class="bar-bg"><div class="bar-fg" style="width:${(c/tMax*100).toFixed(0)}%;background:${col}"></div></div>
+    </div>`).join('');
+
+  // 담당자
+  const agM={};
+  cs.forEach(r=>{ let a=cl(r['답변자']||'').split('/')[0].trim(); if(!a||a==='-') return; agM[a]=(agM[a]||0)+1; });
+  const agTop=topN(agM,5); const agMax=agTop[0]?.[1]||1;
+  document.getElementById('agentBars').innerHTML = bars(agTop,agMax);
+
+  // 인증 요약
+  const cOk=cl2.filter(r=>has(r['인증 상태'],'정상')).length;
+  const cRj=cl2.filter(r=>has(r['인증 상태'],'거절')).length;
+  const bOk=bz.filter(r=>has(r['인증 상태'],'승인완료')).length;
+  const bRj=bz.filter(r=>has(r['인증 상태'],'반려')).length;
+  document.getElementById('certSummary').innerHTML = listRows([
+    ['📞 발신번호 — 정상',   cOk.toLocaleString()+'건','g'],
+    ['📞 발신번호 — 검수 대기',cWait.toLocaleString()+'건','y'],
+    ['📞 발신번호 — 거절',   cRj.toLocaleString()+'건','r'],
+    ['🏢 사업자 — 승인 완료', bOk.toLocaleString()+'건','g'],
+    ['🏢 사업자 — 처리 대기', bWait.toLocaleString()+'건','y'],
+    ['🏢 사업자 — 반려',     bRj.toLocaleString()+'건','r'],
+  ]);
+}
+
+// ══════════════════════════════════════════
+//  탭 C: CS 상담
+// ══════════════════════════════════════════
+function renderCS() {
+  const cs=csData;
+  const answered=cs.filter(r=>has(r['답변 상태'],'답변완료'));
+  const pending=cs.filter(r=>!has(r['답변 상태'],'답변완료'));
+  const rate=cs.length?(answered.length/cs.length*100).toFixed(1):0;
+  const times=[]; answered.forEach(r=>{const q=pd(r['문의 일시']),a=pd(r['답변 일시']);if(q&&a){const h=(a-q)/3600000;if(h>0&&h<72)times.push(h);}});
+  const avgH=times.length?(times.reduce((s,v)=>s+v,0)/times.length).toFixed(1):'—';
+  const w2=times.length?(times.filter(h=>h<=2).length/times.length*100).toFixed(1):'—';
+  const w24=times.length?(times.filter(h=>h<=24).length/times.length*100).toFixed(1):'—';
+
+  document.getElementById('csStatList').innerHTML = listRows([
+    ['전체 문의 건수', cs.length.toLocaleString()+'건','b'],
+    ['응답 완료', answered.length.toLocaleString()+'건','g'],
+    ['미처리', pending.length+'건', pending.length>0?'r':'g'],
+    ['응답 완료율', rate+'%', rate>=98?'g':rate>=90?'y':'r'],
+    ['평균 응답 시간', avgH+'시간',''],
+    ['2시간 내 응답률', w2+'%', w2>=50?'g':w2>=30?'y':'r'],
+    ['당일(24h) 응답률', w24+'%', w24>=90?'g':w24>=70?'y':'r'],
+  ]);
+
+  const chMap={};
+  cs.forEach(r=>{ let c=cl(r['문의 채널'])||'기타'; if(!c.match(/^[가-힣\s]+$/)||c.length<2) c='게시판'; chMap[c]=(chMap[c]||0)+1; });
+  const chTop=topN(chMap,5);
+  dc('ch'); charts.ch=new Chart(document.getElementById('chartChannel'),{
+    type:'doughnut',data:{labels:chTop.map(x=>x[0]),datasets:[{data:chTop.map(x=>x[1]),backgroundColor:C,borderWidth:0}]},
+    options:{cutout:'56%',plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  const catMap={};
+  cs.forEach(r=>{ let c=cl(r['분류1'])||'미분류'; if(!c.match(/^[가-힣\s]+$/)) c='스마트문자 문의'; catMap[c]=(catMap[c]||0)+1; });
+  const cat10=topN(catMap,10);
+  document.getElementById('catBarsDetail').innerHTML = bars(cat10,cat10[0]?.[1]||1);
+
+  dc('st'); charts.st=new Chart(document.getElementById('chartStatus'),{
+    type:'doughnut',data:{labels:['완료','미처리'],datasets:[{data:[answered.length,pending.length],backgroundColor:['#10b981','#ef4444'],borderWidth:0}]},
+    options:{cutout:'62%',plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:12}}}}
+  });
+  document.getElementById('statusList').innerHTML = listRows([
+    ['응답 완료', answered.length.toLocaleString()+'건','g'],
+    ['미처리', pending.length+'건','r'],
+  ]);
+
+  const t2=times.filter(h=>h<=2).length, t8=times.filter(h=>h>2&&h<=8).length;
+  const t24=times.filter(h=>h>8&&h<=24).length, tOv=times.filter(h=>h>24).length;
+  const tTot=times.length||1, tMax=Math.max(t2,t8,t24,tOv)||1;
+  document.getElementById('timeBarsDetail').innerHTML=[['2시간 이내',t2,'#10b981'],['2~8시간',t8,'#3b82f6'],['8~24시간',t24,'#f59e0b'],['24시간 초과',tOv,'#ef4444']].map(([n,c,col])=>`
+    <div class="bar-row"><div class="bar-info"><span class="bar-name">${n}</span>
+    <span class="bar-cnt" style="color:${col}">${c.toLocaleString()}<small>건 ${(c/tTot*100).toFixed(1)}%</small></span></div>
+    <div class="bar-bg"><div class="bar-fg" style="width:${(c/tMax*100).toFixed(0)}%;background:${col}"></div></div></div>`).join('');
+
+  const agM={};
+  cs.forEach(r=>{ let a=cl(r['답변자']||'').split('/')[0].trim(); if(!a||a==='-') return; agM[a]=(agM[a]||0)+1; });
+  const ag8=topN(agM,8);
+  document.getElementById('agentDetail').innerHTML = bars(ag8,ag8[0]?.[1]||1);
+
+  const memMap={};
+  cs.forEach(r=>{ let m=cl(r['회원 분류'])||'미분류'; memMap[m]=(memMap[m]||0)+1; });
+  const memTop=topN(memMap,5);
+  dc('mem'); charts.mem=new Chart(document.getElementById('chartMember'),{
+    type:'doughnut',data:{labels:memTop.map(x=>x[0]),datasets:[{data:memTop.map(x=>x[1]),backgroundColor:C,borderWidth:0}]},
+    options:{cutout:'56%',plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}
+  });
+}
+
+// ══════════════════════════════════════════
+//  탭 R: 인증 현황
+// ══════════════════════════════════════════
+function renderCert() {
+  const cl2=callerData, bz=bizData;
+  const cN=cl2.filter(r=>has(r['인증 상태'],'정상')).length;
+  const cW=cl2.filter(r=>has(r['인증 상태'],'검수대기')||has(r['인증 상태'],'검수중')).length;
+  const cR=cl2.filter(r=>has(r['인증 상태'],'거절')).length;
+  const cO=cl2.length-cN-cW-cR;
+  document.getElementById('callerTotal').textContent=cl2.length.toLocaleString();
+  document.getElementById('callerList').innerHTML=listRows([
+    ['정상 처리', cN.toLocaleString()+'건 ('+(cl2.length?(cN/cl2.length*100).toFixed(1):0)+'%)','g'],
+    ['검수 대기', cW.toLocaleString()+'건','y'],
+    ['거절', cR.toLocaleString()+'건','r'],
+    ['기타', cO.toLocaleString()+'건','gr'],
+  ]);
+  dc('ca'); charts.ca=new Chart(document.getElementById('chartCaller'),{
+    type:'doughnut',data:{labels:['정상','검수 대기','거절','기타'],datasets:[{data:[cN,cW,cR,cO],backgroundColor:['#10b981','#f59e0b','#ef4444','#94a3b8'],borderWidth:0}]},
+    options:{cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  const bA=bz.filter(r=>has(r['인증 상태'],'승인완료')).length;
+  const bW=bz.filter(r=>has(r['인증 상태'],'대기')||has(r['인증 상태'],'진행중')).length;
+  const bR=bz.filter(r=>has(r['인증 상태'],'반려')).length;
+  const bD=bz.filter(r=>has(r['인증 상태'],'삭제')).length;
+  const bO=bz.length-bA-bW-bR-bD;
+  document.getElementById('bizTotal').textContent=bz.length.toLocaleString();
+  document.getElementById('bizList').innerHTML=listRows([
+    ['승인 완료', bA.toLocaleString()+'건 ('+(bz.length?(bA/bz.length*100).toFixed(1):0)+'%)','g'],
+    ['처리 대기', bW.toLocaleString()+'건','y'],
+    ['반려', bR.toLocaleString()+'건','r'],
+    ['삭제', bD.toLocaleString()+'건','gr'],
+    ['기타', bO.toLocaleString()+'건','gr'],
+  ]);
+  dc('bz'); charts.bz=new Chart(document.getElementById('chartBiz'),{
+    type:'doughnut',data:{labels:['승인완료','처리대기','반려','삭제','기타'],datasets:[{data:[bA,bW,bR,bD,bO],backgroundColor:['#10b981','#f59e0b','#ef4444','#94a3b8','#e2e8f0'],borderWidth:0}]},
+    options:{cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}
+  });
+}
+
+// ══════════════════════════════════════════
+//  지표 관리 탭
+// ══════════════════════════════════════════
+let dataHistory = JSON.parse(localStorage.getItem('op_history') || '[]');
+
+function syncInputs() {
+  document.getElementById('csSheetName').value    = localStorage.getItem('op_sheet_cs')    || 'CS상담';
+  document.getElementById('csAdminName').value    = localStorage.getItem('op_admin_cs')    || '';
+  document.getElementById('callerSheetName').value = localStorage.getItem('op_sheet_caller') || '인증-발신번호';
+  document.getElementById('callerAdminName').value = localStorage.getItem('op_admin_caller') || '';
+  document.getElementById('bizSheetName').value   = localStorage.getItem('op_sheet_biz')   || '인증-사업자';
+  document.getElementById('bizAdminName').value   = localStorage.getItem('op_admin_biz')   || '';
+  // GAS URL 표시
+  const savedUrl = localStorage.getItem('op_gas_url') || GAS_URL;
+  const urlInput = document.getElementById('gasUrlInput');
+  const urlDisp  = document.getElementById('gasUrlDisplay');
+  if(urlInput) urlInput.value = savedUrl;
+  if(urlDisp)  urlDisp.textContent = savedUrl;
+}
+
+function updateManagementStatus() {
+  const setCard = (prefix, data) => {
+    const valEl = document.getElementById('sc-'+prefix+'-value');
+    const subEl = document.getElementById('sc-'+prefix+'-sub');
+    if (!valEl) return;
+    valEl.textContent = data.length ? data.length.toLocaleString()+'건' : '—';
+    valEl.style.color = data.length ? '#059669' : '#94a3b8';
+    subEl.textContent = data.length ? '로드됨' : '데이터 없음';
+  };
+  setCard('cs',     csData);
+  setCard('caller', callerData);
+  setCard('biz',    bizData);
+}
+
+// ── 채팅상담 파일 업로드 ──
+function handleChatDrop(e) {
+  e.preventDefault();
+  document.getElementById('chatUploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleChatFile(file);
+}
+
+function handleChatFile(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const result = document.getElementById('chatUploadResult');
+  result.style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let rows = [];
+      if (ext === 'csv') {
+        const parsed = Papa.parse(e.target.result, { header: true, skipEmptyLines: true });
+        rows = parsed.data;
+      } else {
+        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      }
+      if (!rows.length) throw new Error('데이터가 없습니다');
+
+      // data.js에 저장하기 위해 서버로 전송
+      chatData = rows;
+      localStorage.setItem('op_chat_data', JSON.stringify(rows));
+      localStorage.setItem('op_chat_file', file.name);
+      updateChatStatus();
+      result.className = 'upload-result ok';
+      result.textContent = '✅ ' + rows.length.toLocaleString() + '건 업로드 완료: ' + file.name;
+      result.style.display = 'block';
+      toast('💬 채팅상담 ' + rows.length.toLocaleString() + '건 업로드됨', 'ok');
+      renderAll();
+    } catch(err) {
+      result.className = 'upload-result err';
+      result.textContent = '❌ 오류: ' + err.message;
+      result.style.display = 'block';
+    }
+  };
+  if (ext === 'csv') reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function updateChatStatus() {
+  const saved = localStorage.getItem('op_chat_data');
+  const fname = localStorage.getItem('op_chat_file') || '';
+  const countEl = document.getElementById('chatStatusCount');
+  const dateEl  = document.getElementById('chatStatusDate');
+  if (!countEl) return;
+  if (saved) {
+    try {
+      const d = JSON.parse(saved);
+      countEl.textContent = d.length.toLocaleString() + '건';
+      countEl.style.color = '#059669';
+      dateEl.textContent  = fname || '업로드됨';
+    } catch(e) {}
+  } else {
+    countEl.textContent = '0건'; countEl.style.color = '#94a3b8';
+    dateEl.textContent = '업로드된 파일 없음';
+  }
+}
+
+function clearChatData() {
+  if (!confirm('채팅 데이터를 초기화할까요?')) return;
+  localStorage.removeItem('op_chat_data');
+  localStorage.removeItem('op_chat_file');
+  chatData = [];
+  updateChatStatus();
+  toast('🗑 채팅 데이터 초기화됨', 'warn');
+  renderAll();
+}
+
+// ── 설정 저장 ──
+function saveCSConfig() {
+  const admin = document.getElementById('csAdminName').value.trim();
+  const sheet = document.getElementById('csSheetName').value.trim() || 'CS상담';
+  if(admin) localStorage.setItem('op_admin_cs', admin);
+  localStorage.setItem('op_sheet_cs', sheet);
+  toast('💾 CS 담당자 저장됨', 'ok');
+}
+function saveCallerConfig() {
+  const admin = document.getElementById('callerAdminName').value.trim();
+  const sheet = document.getElementById('callerSheetName').value.trim() || '인증-발신번호';
+  if(admin) localStorage.setItem('op_admin_caller', admin);
+  localStorage.setItem('op_sheet_caller', sheet);
+  toast('💾 발신번호 담당자 저장됨', 'ok');
+}
+function saveBizConfig() {
+  const admin = document.getElementById('bizAdminName').value.trim();
+  const sheet = document.getElementById('bizSheetName').value.trim() || '인증-사업자';
+  if(admin) localStorage.setItem('op_admin_biz', admin);
+  localStorage.setItem('op_sheet_biz', sheet);
+  toast('💾 사업자 담당자 저장됨', 'ok');
+}
+function saveGasUrl() {
+  const url = document.getElementById('gasUrlInput').value.trim();
+  if(!url) { toast('URL을 입력해주세요', 'warn'); return; }
+  localStorage.setItem('op_gas_url', url);
+  document.getElementById('gasUrlDisplay').textContent = url;
+  toast('💾 GAS URL 저장됨', 'ok');
+}
+
+// ── 히스토리 ──
+function addHistory(method, admin, rows, dataType) {
+  dataHistory.unshift({ id:Date.now(), dt:new Date().toLocaleString('ko-KR'), admin, method, rows, dataType });
+  if(dataHistory.length>50) dataHistory=dataHistory.slice(0,50);
+  localStorage.setItem('op_history', JSON.stringify(dataHistory));
+  renderHistoryTable();
+}
+function deleteHistory(id) {
+  dataHistory=dataHistory.filter(h=>h.id!==id);
+  localStorage.setItem('op_history', JSON.stringify(dataHistory));
+  renderHistoryTable();
+}
+function clearHistory() {
+  if(!confirm('히스토리를 전체 삭제할까요?')) return;
+  dataHistory=[]; localStorage.setItem('op_history','[]'); renderHistoryTable();
+}
+function renderHistoryTable() {
+  const wrap=document.getElementById('historyTableWrap');
+  if(!wrap) return;
+  if(!dataHistory.length) {
+    wrap.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px">등록 이력이 없습니다</div>'; return;
+  }
+  const badgeCls={CS:'badge-cs',발신번호:'badge-caller',사업자:'badge-biz'};
+  wrap.innerHTML=`<table class="htable">
+    <thead><tr><th>#</th><th>일시</th><th>유형</th><th>방법</th><th>담당자</th><th>건수</th><th></th></tr></thead>
+    <tbody>${dataHistory.map((h,i)=>`
+      <tr>
+        <td style="color:#94a3b8;font-size:11px">${i+1}</td>
+        <td style="color:#64748b;font-size:11px;white-space:nowrap">${h.dt}</td>
+        <td><span class="badge-type ${badgeCls[h.dataType]||'badge-cs'}">${h.dataType}</span></td>
+        <td style="font-size:11px;color:#64748b">${h.method}</td>
+        <td style="font-weight:700">${h.admin}</td>
+        <td style="font-weight:800;color:#2563eb">${(h.rows||0).toLocaleString()}건</td>
+        <td><button class="btn-del-h" onclick="deleteHistory(${h.id})">×</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+// ══════════════════════════════════════════
+//  시작
+// ══════════════════════════════════════════
+window.addEventListener('load', () => {
+  loadPreloaded();
+  renderAll();
+  syncInputs();
+  updateManagementStatus();
+  updateChatStatus();
+  renderHistoryTable();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알리고 운영 자동 답변</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, 'Noto Sans KR', sans-serif; background: #f1f5f9; color: #1e293b; font-size: 13px; margin: 0; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 18px 80px; }
+
+  /* header */
+  .top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .top h1 { font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; }
+  .top .sub { color: #64748b; font-size: 12px; margin-top: 3px; }
+  .badge-beta { background: #ede9fe; color: #7c3aed; font-weight: 700; font-size: 10px; padding: 3px 8px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+
+  /* stat cards */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stat { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; }
+  .stat .label { color: #64748b; font-size: 11px; font-weight: 600; }
+  .stat .num { font-size: 24px; font-weight: 800; color: #0f172a; margin-top: 4px; }
+  .stat .num.green { color: #059669; }
+  .stat .num.blue { color: #2563eb; }
+  .stat .num.amber { color: #d97706; }
+
+  /* controls */
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { padding: 7px 13px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; border-radius: 999px; cursor: pointer; }
+  .chip:hover { border-color: #cbd5e1; }
+  .chip.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .chip .c { opacity: .75; margin-left: 4px; font-weight: 700; }
+  .search { flex: 1; min-width: 180px; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; }
+  .search:focus { border-color: #93c5fd; }
+  .toggle-done { font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+
+  .progress-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+  .progress-bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+  .progress-bar > div { height: 100%; background: #059669; border-radius: 999px; transition: width .3s; }
+  .progress-wrap .txt { font-size: 12px; font-weight: 700; color: #334155; white-space: nowrap; }
+
+  /* card */
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 14px; overflow: hidden; }
+  .card.done { opacity: .55; }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 860px){ .card-grid { grid-template-columns: 1fr; } }
+
+  .col { padding: 16px 18px; }
+  .col.left { border-right: 1px dashed #e2e8f0; }
+  @media (max-width: 860px){ .col.left { border-right: none; border-bottom: 1px dashed #e2e8f0; } }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; align-items: center; }
+  .tag { font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .tag.cat { background: #dbeafe; color: #1d4ed8; }
+  .tag.ch { background: #f1f5f9; color: #475569; }
+  .tag.mem { background: #fef3c7; color: #b45309; }
+  .tag.auto { background: #dcfce7; color: #15803d; }
+  .tag.manual { background: #fee2e2; color: #b91c1c; }
+  .who { font-size: 12px; color: #334155; font-weight: 700; }
+  .when { font-size: 11px; color: #94a3b8; margin-left: auto; }
+
+  .q-label, .a-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .q-body { background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 11px 12px; font-size: 13px; line-height: 1.65; white-space: pre-wrap; max-height: 260px; overflow-y: auto; color: #1e293b; }
+  .q-empty { color: #94a3b8; font-style: italic; }
+
+  .a-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .conf { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .conf.high { background: #dcfce7; color: #15803d; }
+  .conf.mid { background: #fef9c3; color: #a16207; }
+  .conf.low { background: #fee2e2; color: #b91c1c; }
+  textarea.draft { width: 100%; min-height: 150px; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 11px 12px; font-size: 13px; line-height: 1.65; font-family: inherit; resize: vertical; outline: none; color: #0f172a; }
+  textarea.draft:focus { border-color: #93c5fd; }
+  .basis { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+
+  .actions { display: flex; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
+  .btn { padding: 9px 14px; font-size: 12px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+  .btn-copy { background: #2563eb; color: #fff; }
+  .btn-copy:hover { background: #1d4ed8; }
+  .btn-done { background: #059669; color: #fff; }
+  .btn-done:hover { background: #047857; }
+  .btn-undo { background: #f1f5f9; color: #475569; }
+  .btn-ref { background: #fff; color: #7c3aed; border: 1.5px solid #ddd6fe; }
+  .btn-reset { background: #fff; color: #94a3b8; border: 1.5px solid #e2e8f0; }
+
+  .ref { margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 10px; display: none; }
+  .ref.open { display: block; }
+  .ref h4 { font-size: 11px; color: #7c3aed; margin: 0 0 7px; font-weight: 700; }
+  .ref-item { background: #faf5ff; border: 1px solid #f3e8ff; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
+  .ref-item .rq { font-size: 11.5px; color: #6b21a8; font-weight: 600; margin-bottom: 3px; }
+  .ref-item .ra { font-size: 12px; color: #334155; line-height: 1.55; white-space: pre-wrap; }
+  .ref-item .use { font-size: 10.5px; color: #7c3aed; cursor: pointer; font-weight: 700; margin-top: 4px; display: inline-block; }
+
+  .empty { text-align: center; color: #94a3b8; padding: 60px 20px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 11px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 99; }
+  .toast.show { opacity: 1; }
+  .note { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 10px; padding: 11px 14px; font-size: 12px; line-height: 1.6; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>알리고 운영 자동 답변 <span class="badge-beta">초안 검토</span></h1>
+      <div class="sub" id="updated">데이터 로딩 중…</div>
+    </div>
+  </div>
+
+  <div class="note">
+    💡 <b>사용법</b> — 각 문의의 AI 초안을 확인·수정한 뒤 <b>복사</b>를 눌러 알리고 관리자 게시판에 붙여넣고 게시하세요. 게시 후 <b>완료</b>를 누르면 목록에서 정리됩니다.
+    초안은 같은 유형의 과거 답변을 학습한 기본안이라 <b>발송 전 반드시 검토</b>가 필요합니다.
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="progress-wrap">
+    <div class="txt" id="progTxt">처리 0 / 0</div>
+    <div class="progress-bar"><div id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="controls">
+    <div class="filters" id="filters"></div>
+    <input class="search" id="search" placeholder="문의 내용·아이디·업체명 검색…">
+    <label class="toggle-done"><input type="checkbox" id="showDone"> 완료 포함</label>
+  </div>
+
+  <div id="list"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  "use strict";
+  const PENDING_STATES = ["답변대기중","답변중","중간답변"];
+  // 유형별 자동발송 적합도 (Phase 2 대비 표시용)
+  const AUTO_SAFE = { "엑셀파일 등록대행": true, "환불문의": true, "탈퇴환불문의": true };
+
+  const LS_KEY = "aligo_autoreply_state_v1";
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch(e){ state = {}; }
+  function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} }
+
+  const data = (window._PRELOADED || {});
+  const allCs = Array.isArray(data.cs) ? data.cs : [];
+  const F = (r,k)=> (r && r[k]!=null ? String(r[k]) : "");
+
+  // 고유키 (아이디 + 문의일시)
+  const keyOf = (r)=> (F(r,"아이디")+"|"+F(r,"문의 일시")).replace(/\s+/g," ").trim();
+
+  const pending = allCs.filter(r => PENDING_STATES.includes(F(r,"답변 상태").trim()));
+  const answered = allCs.filter(r => F(r,"답변내용").trim().length > 15);
+
+  // ---------- 초안 생성 엔진 ----------
+  const HELLO = "안녕하세요.\n알리고 고객센터입니다.\n\n";
+  const BYE = "\n\n문의해 주셔서 감사합니다.";
+
+  function bodyFor(cat, content){
+    const c = content || "";
+    const has = (re)=> re.test(c);
+    // 키워드 우선 (유형 무관 공통 패턴)
+    if (has(/세금계산서|계산서|현금영수증|세금 ?계산/)) {
+      return { body: "요청하신 계산서 발행 관련 안내드립니다.\n계산서는 로그인 후 문의주셔야 처리가 가능하며, 발행을 위해 아래 정보를 기재해 회신 부탁드립니다.\n- 상호(성명):\n- 사업자번호(또는 주민번호):\n- 주소:\n- 계산서 수신 이메일:\n\n정보 확인 후 발행 도와드리겠습니다.", conf:"mid", basis:"계산서 요청 키워드 감지 → 계산서 발행 안내 템플릿" };
+    }
+    if (has(/선관위|발송\s*내역|전송\s*내역|내역서|제출용/)) {
+      return { body: "요청해주신 기간 내 발송 데이터(전송 내역) 확인하여 전달드립니다.\n[발송 내역 파일/조회 결과 첨부 또는 안내]\n추가로 필요하신 사항이 있으시면 언제든 편하게 문의 부탁드립니다.", conf:"mid", basis:"발송 내역 요청 키워드 감지 → 내역 안내 템플릿" };
+    }
+    if (has(/\bAPI\b|에이피아이|연동/i)) {
+      return { body: "문의주신 내용 확인하였습니다.\nAPI 관련 문의는 정확한 확인을 위해 실시간 채팅하기를 통해 담당자가 안내드리고 있습니다.\n번거로우시더라도 실시간 채팅하기로 문의 부탁드립니다.", conf:"mid", basis:"API/연동 키워드 감지 → 실시간 채팅 안내 템플릿" };
+    }
+
+    switch (cat) {
+      case "환불문의":
+      case "탈퇴환불문의":
+        return { body: "남겨주신 계좌로 환불 접수가 완료되었습니다.\n당사는 매주 목요일까지 접수된 건을 금요일에 일괄 환불하고 있습니다.\n- 환불 예정금액: [금액 확인 후 기재]원\n- 실입금 예정일: [가까운 금요일 날짜]\n\n이용에 불편을 드린 점 양해 부탁드리며, 개선 의견은 기능요청 페이지를 통해 접수해주시면 적극 반영하겠습니다.", conf:"high", basis:"환불 표준 안내 템플릿 (과거 답변 패턴 일치)" };
+      case "엑셀파일 등록대행":
+        return { body: "등록요청하신 회원입력이 완료되었습니다.\n- 등록그룹: [그룹명]\n- 등록: [N]건\n- 등록실패: [N]건 ([사유: 휴대폰형식에러/중복 등])", conf:"high", basis:"등록대행 완료 표준 템플릿 (수치만 확인 입력)" };
+      case "스마트문자 기능추가":
+        return { body: "소중한 의견 감사합니다.\n말씀주신 기능은 내부 담당 부서에 전달하여 검토하겠습니다.\n반영 여부가 확정되면 별도 안내드리겠습니다. 더 나은 서비스를 위해 노력하겠습니다.", conf:"mid", basis:"기능추가 요청 → 접수/검토 안내 템플릿" };
+      case "탈퇴전 상담":
+        return { body: "문의주신 내용 확인하였습니다.\n이용에 불편하셨던 점이 있으셨다면 먼저 사과드립니다.\n[불편 사항 확인 및 해결 안내] 도움이 필요하신 부분을 말씀해주시면 최대한 지원해드리겠습니다.", conf:"low", basis:"탈퇴 전 상담 → 리텐션 안내 템플릿(개별 확인 필요)" };
+      case "이메일 문의":
+      case "스마트문자 문의":
+      case "알림톡 문의":
+      default:
+        return { body: "문의주신 내용 확인하였습니다.\n[확인 결과 및 안내 내용 작성]\n추가로 궁금하신 점이 있으시면 편하게 문의 부탁드립니다.", conf:"low", basis:"기본 안내 템플릿(내용 확인 후 본문 작성 필요)" };
+    }
+  }
+
+  function makeDraft(r){
+    const ai = F(r,"AI 답변").trim();
+    if (ai) return { text: ai, conf: "high", basis: "data.js의 AI 답변 사용 (사전 생성됨)" };
+    const cat = F(r,"분류1").trim();
+    const b = bodyFor(cat, F(r,"문의내용"));
+    return { text: HELLO + b.body + BYE, conf: b.conf, basis: b.basis };
+  }
+
+  // ---------- 유사 과거답변 참조 ----------
+  function tokenize(s){ return (s||"").toLowerCase().replace(/[^0-9a-z가-힣]+/g," ").split(" ").filter(w=>w.length>=2); }
+  function similar(r, n){
+    const cat = F(r,"분류1").trim();
+    const qt = new Set(tokenize(F(r,"문의내용")));
+    const pool = answered.filter(a=> F(a,"분류1").trim()===cat);
+    const scored = pool.map(a=>{
+      const at = new Set(tokenize(F(a,"문의내용")));
+      let overlap = 0; qt.forEach(w=>{ if(at.has(w)) overlap++; });
+      return { a, score: overlap };
+    }).sort((x,y)=> y.score - x.score);
+    return scored.slice(0, n).map(s=>s.a);
+  }
+
+  // ---------- 렌더링 ----------
+  let activeCat = "전체";
+  let searchTerm = "";
+
+  const catCounts = {};
+  pending.forEach(r=>{ const c=F(r,"분류1").trim()||"(미분류)"; catCounts[c]=(catCounts[c]||0)+1; });
+  const cats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+
+  function doneCount(){ return pending.filter(r=> state[keyOf(r)] && state[keyOf(r)].done).length; }
+
+  function renderStats(){
+    const total = pending.length;
+    const done = doneCount();
+    const auto = pending.filter(r=> AUTO_SAFE[F(r,"분류1").trim()]).length;
+    document.getElementById("stats").innerHTML = `
+      <div class="stat"><div class="label">대기 문의</div><div class="num amber">${total}</div></div>
+      <div class="stat"><div class="label">처리 완료(이 화면)</div><div class="num green">${done}</div></div>
+      <div class="stat"><div class="label">남은 건</div><div class="num blue">${total-done}</div></div>
+      <div class="stat"><div class="label">자동발송 후보 유형</div><div class="num">${auto}</div></div>
+      <div class="stat"><div class="label">학습 답변(과거)</div><div class="num">${answered.length.toLocaleString()}</div></div>`;
+    const pct = total ? Math.round(done/total*100) : 0;
+    document.getElementById("progFill").style.width = pct+"%";
+    document.getElementById("progTxt").textContent = `처리 ${done} / ${total} (${pct}%)`;
+  }
+
+  function renderFilters(){
+    const el = document.getElementById("filters");
+    let html = `<button class="chip ${activeCat==='전체'?'active':''}" data-cat="전체">전체<span class="c">${pending.length}</span></button>`;
+    cats.forEach(c=>{ html += `<button class="chip ${activeCat===c?'active':''}" data-cat="${c}">${c}<span class="c">${catCounts[c]}</span></button>`; });
+    el.innerHTML = html;
+    el.querySelectorAll(".chip").forEach(b=> b.onclick = ()=>{ activeCat=b.dataset.cat; renderFilters(); renderList(); });
+  }
+
+  function fmtDate(s){ return (s||"").replace("T"," ").slice(0,16); }
+
+  function renderList(){
+    const showDone = document.getElementById("showDone").checked;
+    const list = document.getElementById("list");
+    let rows = pending.slice();
+    if (activeCat!=="전체") rows = rows.filter(r=> (F(r,"분류1").trim()||"(미분류)")===activeCat);
+    if (searchTerm){ const t=searchTerm.toLowerCase(); rows = rows.filter(r=> (F(r,"문의내용")+F(r,"아이디")+F(r,"이름/업체명")).toLowerCase().includes(t)); }
+    if (!showDone) rows = rows.filter(r=> !(state[keyOf(r)] && state[keyOf(r)].done));
+    // 최신순
+    rows.sort((a,b)=> F(b,"문의 일시").localeCompare(F(a,"문의 일시")));
+
+    if (!rows.length){ list.innerHTML = `<div class="empty">표시할 문의가 없습니다. 🎉</div>`; return; }
+
+    list.innerHTML = rows.map((r,i)=>{
+      const k = keyOf(r);
+      const st = state[k] || {};
+      const draft = (st.draft!=null) ? st.draft : makeDraft(r);
+      const draftText = (st.draft!=null) ? st.draft : draft.text;
+      const conf = (st.draft!=null) ? "saved" : draft.conf;
+      const basis = (st.draft!=null) ? "직접 수정한 초안" : draft.basis;
+      const cat = F(r,"분류1").trim()||"(미분류)";
+      const isAuto = AUTO_SAFE[cat];
+      const content = F(r,"문의내용").trim();
+      const confClass = conf==="high"?"high":conf==="mid"?"mid":conf==="saved"?"high":"low";
+      const confTxt = conf==="high"?"신뢰도 높음":conf==="mid"?"신뢰도 보통":conf==="saved"?"수정됨":"확인 필요";
+      const idx = "row"+i;
+      return `<div class="card ${st.done?'done':''}" data-k="${encodeURIComponent(k)}">
+        <div class="card-grid">
+          <div class="col left">
+            <div class="meta">
+              <span class="tag cat">${cat}</span>
+              <span class="tag ch">${F(r,"문의 채널")||"게시판"}</span>
+              ${F(r,"회원 분류")?`<span class="tag mem">${F(r,"회원 분류")}</span>`:""}
+              <span class="tag ${isAuto?'auto':'manual'}">${isAuto?'자동발송 후보':'검토 필수'}</span>
+              <span class="when">${fmtDate(F(r,"문의 일시"))}</span>
+            </div>
+            <div class="who">${F(r,"이름/업체명")||F(r,"아이디")||"비회원"}</div>
+            <div class="q-label" style="margin-top:8px;">문의 내용</div>
+            <div class="q-body ${content?'':'q-empty'}">${content?escapeHtml(content):"(본문 없음 — 등록대행/첨부 문의일 수 있음)"}</div>
+          </div>
+          <div class="col right">
+            <div class="a-head">
+              <span class="a-label">AI 답변 초안</span>
+              <span class="conf ${confClass}">${confTxt}</span>
+            </div>
+            <textarea class="draft" id="ta_${idx}">${escapeHtml(draftText)}</textarea>
+            <div class="basis">근거: ${escapeHtml(basis)}</div>
+            <div class="actions">
+              <button class="btn btn-copy" data-act="copy" data-ta="ta_${idx}">📋 복사</button>
+              ${st.done
+                ? `<button class="btn btn-undo" data-act="undo">↩ 완료 취소</button>`
+                : `<button class="btn btn-done" data-act="done" data-ta="ta_${idx}">✓ 완료</button>`}
+              <button class="btn btn-ref" data-act="ref">유사 답변</button>
+              <button class="btn btn-reset" data-act="reset" data-ta="ta_${idx}">초안 복원</button>
+            </div>
+            <div class="ref" id="ref_${idx}"></div>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+
+    // 이벤트 바인딩
+    list.querySelectorAll(".card").forEach((card,i)=>{
+      const k = decodeURIComponent(card.dataset.k);
+      const r = pending.find(x=> keyOf(x)===k);
+      const ta = card.querySelector("textarea.draft");
+      ta.addEventListener("input", ()=>{ state[k]=state[k]||{}; state[k].draft=ta.value; save(); });
+      card.querySelectorAll("[data-act]").forEach(btn=>{
+        btn.onclick = ()=>{
+          const act = btn.dataset.act;
+          if (act==="copy"){ copyText(ta.value); }
+          else if (act==="done"){ state[k]=state[k]||{}; state[k].done=true; state[k].draft=ta.value; save(); renderStats(); renderList(); toast("완료 처리했습니다"); }
+          else if (act==="undo"){ state[k]=state[k]||{}; state[k].done=false; save(); renderStats(); renderList(); }
+          else if (act==="reset"){ if(state[k]){ delete state[k].draft; save(); } renderList(); toast("초안을 복원했습니다"); }
+          else if (act==="ref"){ toggleRef(card, r, i); }
+        };
+      });
+    });
+  }
+
+  function toggleRef(card, r, i){
+    const box = card.querySelector(".ref");
+    if (box.classList.contains("open")){ box.classList.remove("open"); box.innerHTML=""; return; }
+    const sims = similar(r, 3).filter(a=>a);
+    if (!sims.length){ box.innerHTML = `<h4>유사 과거 답변</h4><div style="color:#94a3b8;font-size:12px;">유사 답변을 찾지 못했습니다.</div>`; }
+    else {
+      box.innerHTML = `<h4>유사 과거 답변 (${sims.length}건)</h4>` + sims.map((a,j)=>`
+        <div class="ref-item">
+          <div class="rq">Q. ${escapeHtml(F(a,"문의내용").slice(0,90)) || "(본문 없음)"}</div>
+          <div class="ra">${escapeHtml(F(a,"답변내용"))}</div>
+          <span class="use" data-use="${j}">이 답변을 초안으로 가져오기 →</span>
+        </div>`).join("");
+      box.querySelectorAll(".use").forEach(u=>{
+        u.onclick = ()=>{
+          const a = sims[parseInt(u.dataset.use)];
+          const ta = card.querySelector("textarea.draft");
+          ta.value = F(a,"답변내용");
+          const k = decodeURIComponent(card.dataset.k);
+          state[k]=state[k]||{}; state[k].draft=ta.value; save();
+          toast("유사 답변을 초안에 적용했습니다");
+        };
+      });
+    }
+    box.classList.add("open");
+  }
+
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+  function copyText(t){
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>toast("복사했습니다 — 게시판에 붙여넣으세요"), ()=>fallbackCopy(t)); }
+    else fallbackCopy(t);
+  }
+  function fallbackCopy(t){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy"); toast("복사했습니다");}catch(e){toast("복사 실패 — 직접 선택해 복사하세요");} document.body.removeChild(ta); }
+  let toastTimer;
+  function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1800); }
+
+  // init
+  document.getElementById("updated").textContent =
+    `데이터 기준: ${(data.updatedAt||"").replace("T"," ").slice(0,16) || "알 수 없음"} · 전체 문의 ${allCs.length.toLocaleString()}건 · 대기 ${pending.length}건`;
+  document.getElementById("search").addEventListener("input", e=>{ searchTerm=e.target.value.trim(); renderList(); });
+  document.getElementById("showDone").addEventListener("change", renderList);
+  renderStats(); renderFilters(); renderList();
+})();
+</script>
+</body>
+</html>

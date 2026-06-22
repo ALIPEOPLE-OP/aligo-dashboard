@@ -1,0 +1,17 @@
+# 로컬 전용 파일 — GitHub에 올리지 않음
+*.bat
+node_modules/
+
+# 백업 파일
+*_backup_*
+*_backup.*
+_구버전/
+
+# 로그 및 임시 파일
+*.log
+server_error.txt
+auto-update.log
+
+# 대용량 데이터 파일
+data.js
+

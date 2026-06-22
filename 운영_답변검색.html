@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알리고 CS 답변 검색</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, 'Noto Sans KR', sans-serif; background: #f1f5f9; color: #1e293b; font-size: 13px; margin: 0; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 26px 18px 90px; }
+
+  .head { text-align: center; margin-bottom: 18px; }
+  .head h1 { font-size: 22px; font-weight: 800; margin: 0; color: #0f172a; }
+  .head .sub { color: #64748b; font-size: 12px; margin-top: 6px; }
+
+  .searchbox { position: relative; margin-bottom: 12px; }
+  .searchbox input { width: 100%; padding: 16px 50px 16px 18px; font-size: 15px; border: 2px solid #e2e8f0; border-radius: 14px; outline: none; font-family: inherit; box-shadow: 0 2px 10px rgba(15,23,42,.04); }
+  .searchbox input:focus { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,.12); }
+  .searchbox .ico { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #94a3b8; }
+
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 8px; }
+  .chip { padding: 6px 12px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; border-radius: 999px; cursor: pointer; }
+  .chip:hover { border-color: #cbd5e1; }
+  .chip.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .chip .c { opacity: .7; margin-left: 4px; font-weight: 700; }
+
+  .bar { display: flex; align-items: center; justify-content: space-between; margin: 14px 2px 10px; }
+  .bar .count { font-size: 12px; color: #64748b; font-weight: 600; }
+  .bar .hint { font-size: 11px; color: #94a3b8; }
+
+  .examples { margin-top: 18px; }
+  .examples .t { font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 8px; text-align: center; }
+  .ex-chips { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+  .ex { padding: 7px 13px; font-size: 12px; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 999px; cursor: pointer; color: #334155; }
+  .ex:hover { border-color: #93c5fd; color: #2563eb; }
+
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+  .card.top { border-color: #bfdbfe; box-shadow: 0 2px 14px rgba(37,99,235,.08); }
+  .card-top-label { display: inline-block; background: #2563eb; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; margin-bottom: 10px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 9px; }
+  .tag { font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .tag.cat { background: #dbeafe; color: #1d4ed8; }
+  .tag.dup { background: #f1f5f9; color: #64748b; }
+  .when { font-size: 11px; color: #94a3b8; margin-left: auto; }
+  .score { font-size: 10px; color: #cbd5e1; }
+
+  .q { font-size: 12.5px; color: #475569; line-height: 1.6; margin-bottom: 10px; padding-left: 10px; border-left: 3px solid #e2e8f0; }
+  .q b.h, .a b.h { background: #fef08a; color: #713f12; font-weight: 700; border-radius: 3px; padding: 0 1px; }
+  .a-label { font-size: 11px; font-weight: 700; color: #059669; margin-bottom: 5px; }
+  .a { font-size: 13px; color: #1e293b; line-height: 1.7; white-space: pre-wrap; background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 8px; padding: 11px 13px; }
+  .row { display: flex; gap: 8px; margin-top: 9px; }
+  .btn { padding: 8px 13px; font-size: 12px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+  .btn-copy { background: #059669; color: #fff; }
+  .btn-copy:hover { background: #047857; }
+
+  .empty { text-align: center; color: #94a3b8; padding: 40px 20px; font-size: 13px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 11px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 99; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>🔎 알리고 CS 답변 검색</h1>
+    <div class="sub" id="sub">로딩 중…</div>
+  </div>
+
+  <div class="searchbox">
+    <input id="q" placeholder="고객 문의 내용이나 키워드를 입력하세요  (예: 발신번호 인증, 환불 며칠, 계산서 발행)" autocomplete="off">
+    <span class="ico">⏎</span>
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <div id="result"></div>
+
+  <div class="examples" id="examples">
+    <div class="t">이런 걸 검색해 보세요</div>
+    <div class="ex-chips" id="exChips"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  "use strict";
+  const data = window._PRELOADED || {};
+  const cs = Array.isArray(data.cs) ? data.cs : [];
+  const F = (r,k)=> (r && r[k]!=null ? String(r[k]) : "");
+
+  // 답변완료 + 답변본문 있는 것만 검색 대상
+  let docs = cs.filter(r => F(r,"답변내용").trim().length > 10);
+
+  // 동일 답변 중복 묶기 (정형 답변 다수 → 대표 1개 + 외 N건)
+  const dupMap = new Map();
+  docs.forEach(r=>{
+    const norm = F(r,"답변내용").replace(/\s+/g,"").slice(0,80);
+    if(!dupMap.has(norm)) dupMap.set(norm, []);
+    dupMap.get(norm).push(r);
+  });
+  const reps = [];
+  dupMap.forEach(arr=>{
+    // 대표는 문의내용이 가장 풍부한 것
+    arr.sort((a,b)=> F(b,"문의내용").length - F(a,"문의내용").length);
+    const rep = arr[0]; rep.__dup = arr.length; reps.push(rep);
+  });
+
+  // ---------- 한글 토큰화 + 역색인 ----------
+  const STOP = new Set(["문의","합니다","해주세요","부탁","드립니다","감사","안녕하세요","알리고","고객센터","있습니다","입니다","해서","하고","에서","으로","하는","했는데","해도","되나요","인데","그리고","어떻게","무엇","대한","관련"]);
+  function tok(s){
+    return (s||"").toLowerCase().replace(/[^0-9a-z가-힣]+/g," ").split(" ")
+      .filter(w=> w.length>=2 && !STOP.has(w));
+  }
+  // 문서 토큰 (문의 가중 ↑)
+  const N = reps.length;
+  const df = {};                 // document frequency
+  const docTokens = reps.map(r=>{
+    const qa = {};
+    tok(F(r,"문의내용")).forEach(w=> qa[w] = (qa[w]||0) + 2);   // 문의 가중 2
+    tok(F(r,"답변내용")).forEach(w=> qa[w] = (qa[w]||0) + 1);   // 답변 가중 1
+    Object.keys(qa).forEach(w=> df[w] = (df[w]||0) + 1);
+    return qa;
+  });
+  const idf = w => Math.log((N + 1) / ((df[w]||0) + 1)) + 1;
+
+  // ---------- 검색 ----------
+  let activeCat = "전체";
+  function search(query){
+    const qToks = tok(query);
+    if (!qToks.length) return [];
+    const qLow = query.toLowerCase().replace(/\s+/g,"");
+    const seen = {};
+    const results = [];
+    for (let i=0;i<N;i++){
+      const r = reps[i];
+      if (activeCat!=="전체" && F(r,"분류1").trim()!==activeCat) continue;
+      const dt = docTokens[i];
+      let score = 0, hits = 0;
+      qToks.forEach(w=>{ if (dt[w]){ score += idf(w) * Math.min(dt[w],3); hits++; } });
+      if (!hits) continue;
+      // 구문 일치 보너스: 질의가 문의/답변에 통째로 포함
+      const hay = (F(r,"문의내용")+" "+F(r,"답변내용")).toLowerCase().replace(/\s+/g,"");
+      if (qLow.length>=3 && hay.includes(qLow)) score *= 1.8;
+      // 질의 토큰 커버리지 보너스
+      score *= (0.5 + 0.5*(hits/qToks.length));
+      results.push({ r, score, hits });
+    }
+    results.sort((a,b)=> b.score - a.score);
+    return results.slice(0, 25);
+  }
+
+  // ---------- 렌더 ----------
+  function hl(text, qToks){
+    let out = escapeHtml(text);
+    qToks.forEach(w=>{
+      if (w.length<2) return;
+      const re = new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
+      out = out.replace(re, '<b class="h">$1</b>');
+    });
+    return out;
+  }
+  function fmtDate(s){ return (s||"").replace("T"," ").slice(0,10); }
+
+  function render(query){
+    const box = document.getElementById("result");
+    const ex = document.getElementById("examples");
+    const q = query.trim();
+    if (!q){ box.innerHTML=""; ex.style.display="block"; document.getElementById("bar")&&0; return; }
+    ex.style.display="none";
+    const qToks = tok(q);
+    const res = search(q);
+    if (!res.length){ box.innerHTML = `<div class="empty">"${escapeHtml(q)}"에 대한 과거 답변을 찾지 못했어요.<br>다른 키워드로 검색해 보세요.</div>`; return; }
+
+    let html = `<div class="bar"><span class="count">관련 답변 ${res.length}건</span><span class="hint">가장 비슷한 순서</span></div>`;
+    html += res.map((m,i)=>{
+      const r = m.r;
+      const qc = F(r,"문의내용").trim();
+      const dup = r.__dup>1 ? `<span class="tag dup">유사 ${r.__dup}건</span>` : "";
+      return `<div class="card ${i===0?'top':''}">
+        ${i===0?'<span class="card-top-label">가장 비슷한 답변</span>':''}
+        <div class="meta">
+          <span class="tag cat">${F(r,"분류1").trim()||"기타"}</span>
+          ${dup}
+          <span class="when">${fmtDate(F(r,"문의 일시"))}</span>
+        </div>
+        ${qc?`<div class="q">${hl(qc.slice(0,220), qToks)}${qc.length>220?'…':''}</div>`:''}
+        <div class="a-label">답변</div>
+        <div class="a" id="a_${i}">${hl(F(r,"답변내용"), qToks)}</div>
+        <div class="row"><button class="btn btn-copy" data-i="${i}">📋 이 답변 복사</button></div>
+      </div>`;
+    }).join("");
+    box.innerHTML = html;
+    box.querySelectorAll(".btn-copy").forEach(b=>{
+      b.onclick = ()=> copyText(F(res[parseInt(b.dataset.i)].r,"답변내용"));
+    });
+  }
+
+  // ---------- 필터/예시 ----------
+  const catCounts = {};
+  reps.forEach(r=>{ const c=F(r,"분류1").trim()||"기타"; catCounts[c]=(catCounts[c]||0)+1; });
+  const cats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,7).map(e=>e[0]);
+  function renderFilters(){
+    const el = document.getElementById("filters");
+    let h = `<button class="chip ${activeCat==='전체'?'active':''}" data-cat="전체">전체</button>`;
+    cats.forEach(c=> h += `<button class="chip ${activeCat===c?'active':''}" data-cat="${c}">${c}<span class="c">${catCounts[c]}</span></button>`);
+    el.innerHTML = h;
+    el.querySelectorAll(".chip").forEach(b=> b.onclick=()=>{ activeCat=b.dataset.cat; renderFilters(); render(document.getElementById("q").value); });
+  }
+  const EX = ["발신번호 인증","환불 며칠 걸려요","세금계산서 발행","스팸 차단 해제","엑셀 등록 실패","알림톡 발송","수신거부","대량 발송 속도"];
+  document.getElementById("exChips").innerHTML = EX.map(e=>`<span class="ex">${e}</span>`).join("");
+  document.getElementById("exChips").querySelectorAll(".ex").forEach(e=>{
+    e.onclick = ()=>{ const inp=document.getElementById("q"); inp.value=e.textContent; inp.focus(); render(inp.value); };
+  });
+
+  // ---------- util ----------
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function copyText(t){
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(()=>toast("답변을 복사했습니다"), ()=>fb(t));
+    else fb(t);
+  }
+  function fb(t){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");toast("답변을 복사했습니다");}catch(e){toast("복사 실패");} document.body.removeChild(ta); }
+  let tt; function toast(m){ const t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),1700); }
+
+  // ---------- init ----------
+  document.getElementById("sub").textContent = `검색 가능한 과거 답변 ${reps.length.toLocaleString()}건 (전체 ${docs.length.toLocaleString()}건, 중복 묶음) · 기준 ${fmtDate(data.updatedAt||"")}`;
+  renderFilters();
+  let timer;
+  const inp = document.getElementById("q");
+  inp.addEventListener("input", ()=>{ clearTimeout(timer); timer=setTimeout(()=>render(inp.value), 180); });
+  inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ clearTimeout(timer); render(inp.value); } });
+  inp.focus();
+})();
+</script>
+</body>
+</html>

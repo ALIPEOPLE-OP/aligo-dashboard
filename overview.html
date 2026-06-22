@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알리고 운영 현황 요약</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f0f4f8;color:#1a202c;font-size:14px;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;padding:20px 32px;display:flex;justify-content:space-between;align-items:center;}
+.header-left h1{font-size:20px;font-weight:800;letter-spacing:-.3px;}
+.header-left p{font-size:12px;opacity:.75;margin-top:4px;}
+.header-right{text-align:right;font-size:12px;opacity:.8;}
+.header-right strong{display:block;font-size:14px;font-weight:700;opacity:1;}
+
+/* LAYOUT */
+.container{max-width:1280px;margin:0 auto;padding:24px 32px;}
+.section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:14px;margin-top:28px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1.5px;background:#e2e8f0;}
+.section-title:first-child{margin-top:0;}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:8px;}
+.kpi{background:white;border-radius:14px;padding:20px 18px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);position:relative;overflow:hidden;}
+.kpi-bar{position:absolute;top:0;left:0;right:0;height:4px;border-radius:14px 14px 0 0;}
+.kpi-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.kpi-value{font-size:32px;font-weight:900;line-height:1;letter-spacing:-1.5px;color:#1e293b;}
+.kpi-unit{font-size:16px;font-weight:700;color:#94a3b8;margin-left:2px;}
+.kpi-sub{font-size:12px;color:#64748b;margin-top:8px;font-weight:500;}
+.kpi-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;margin-top:8px;}
+.badge-green{background:#dcfce7;color:#166534;}
+.badge-red{background:#fee2e2;color:#991b1b;}
+.badge-yellow{background:#fef3c7;color:#92400e;}
+.badge-blue{background:#dbeafe;color:#1e40af;}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-bottom:8px;}
+.chart-card{background:white;border-radius:14px;padding:20px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.chart-title{font-size:13px;font-weight:800;color:#1e293b;margin-bottom:16px;}
+.chart-sub{font-size:11px;color:#94a3b8;font-weight:500;}
+
+/* CERT ROW */
+.cert-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px;}
+
+/* STATUS TABLE */
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f1f5f9;}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-size:13px;color:#475569;font-weight:600;}
+.stat-val{font-size:14px;font-weight:800;color:#1e293b;}
+.stat-val.green{color:#059669;}
+.stat-val.red{color:#dc2626;}
+.stat-val.yellow{color:#d97706;}
+.stat-val.blue{color:#2563eb;}
+
+/* PROGRESS */
+.prog-wrap{margin-bottom:10px;}
+.prog-label-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+.prog-name{font-size:12px;color:#64748b;font-weight:600;}
+.prog-pct{font-size:12px;font-weight:800;color:#1e293b;}
+.prog-bg{height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:5px;transition:width .8s cubic-bezier(.4,0,.2,1);}
+
+/* TOP TABLE */
+.top-table{width:100%;}
+.top-table tr td{padding:8px 4px;font-size:12px;border-bottom:1px solid #f8fafc;vertical-align:middle;}
+.top-table tr:last-child td{border-bottom:none;}
+.rank-dot{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;}
+.rank-bar{height:6px;background:#dbeafe;border-radius:3px;overflow:hidden;margin-top:3px;}
+.rank-bar-fill{height:100%;background:#3b82f6;border-radius:3px;}
+.rank-num{font-weight:800;color:#1e293b;font-size:13px;}
+
+/* QUALITY SECTION */
+.quality-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:8px;}
+
+/* FOOTER */
+.footer{text-align:center;padding:24px;font-size:11px;color:#94a3b8;margin-top:8px;}
+
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-row,.cert-row,.quality-row{grid-template-columns:1fr;}
+  .container{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>📊 알리고 운영 현황 요약</h1>
+    <p>CS 상담 · 발신번호 인증 · 사업자 인증</p>
+  </div>
+  <div class="header-right">
+    <strong id="hdr-updated">데이터 로딩 중...</strong>
+    <span id="hdr-range"></span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ① 핵심 KPI -->
+  <div class="section-title">🎯 핵심 지표</div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-bar" style="background:#3b82f6"></div>
+      <div class="kpi-label">총 문의 건수</div>
+      <div><span class="kpi-value" id="kpi-total">—</span><span class="kpi-unit">건</span></div>
+      <div class="kpi-sub" id="kpi-total-sub"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-bar" style="background:#10b981"></div>
+      <div class="kpi-label">응답 완료율</div>
+      <div><span class="kpi-value" id="kpi-rate">—</span><span class="kpi-unit">%</span></div>
+      <div id="kpi-rate-badge"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-bar" style="background:#f59e0b"></div>
+      <div class="kpi-label">평균 응답 시간</div>
+      <div><span class="kpi-value" id="kpi-avgtime">—</span><span class="kpi-unit">시간</span></div>
+      <div id="kpi-time-badge"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-bar" style="background:#ef4444"></div>
+      <div class="kpi-label">미답변 건수</div>
+      <div><span class="kpi-value" id="kpi-pending">—</span><span class="kpi-unit">건</span></div>
+      <div id="kpi-pending-badge"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-bar" style="background:#8b5cf6"></div>
+      <div class="kpi-label">인증 검수 대기</div>
+      <div><span class="kpi-value" id="kpi-cert-wait">—</span><span class="kpi-unit">건</span></div>
+      <div class="kpi-sub">발신번호 + 사업자</div>
+    </div>
+  </div>
+
+  <!-- ② 상담 트렌드 -->
+  <div class="section-title">📈 상담 트렌드 (최근 30일)</div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">일별 문의 건수</div>
+      <canvas id="trendChart" height="120"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">문의 채널 비율</div>
+      <canvas id="channelChart" height="160"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">문의 유형 Top 5</div>
+      <div id="cat-list" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- ③ 상담 품질 -->
+  <div class="section-title">✅ 상담 품질 지표</div>
+  <div class="quality-row">
+    <div class="chart-card">
+      <div class="chart-title">응답 시간 분포</div>
+      <div id="time-dist"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">답변자별 처리 현황</div>
+      <div id="agent-list"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">답변 상태 현황</div>
+      <canvas id="statusChart" height="160"></canvas>
+    </div>
+  </div>
+
+  <!-- ④ 인증 현황 -->
+  <div class="section-title">🔐 인증 처리 현황</div>
+  <div class="cert-row">
+    <div class="chart-card">
+      <div class="chart-title">📞 발신번호 인증</div>
+      <div id="caller-stats"></div>
+      <div style="margin-top:16px"><canvas id="callerChart" height="140"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🏢 사업자 인증</div>
+      <div id="biz-stats"></div>
+      <div style="margin-top:16px"><canvas id="bizChart" height="140"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer" id="footer-info">데이터 기준: data.js 로드 완료 시 갱신됩니다</div>
+
+<script>
+// ─────────────────────────────────────
+//  유틸 함수
+// ─────────────────────────────────────
+function badge(text, color) {
+  return `<span class="kpi-badge badge-${color}">${text}</span>`;
+}
+
+function fmtDate(d) {
+  return d ? d.toLocaleDateString('ko-KR', {year:'numeric',month:'short',day:'numeric'}) : '—';
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  const d = new Date(String(s).replace(' ', 'T'));
+  return isNaN(d) ? null : d;
+}
+
+function getDateStr(s) {
+  if (!s) return '';
+  return String(s).slice(0, 10);
+}
+
+function cleanStr(s) {
+  if (!s) return '';
+  return String(s).normalize('NFC').trim();
+}
+
+// 인코딩 깨짐 보정용 — 주요 한글 문자열 포함 여부
+function contains(s, keyword) {
+  const n = cleanStr(s).normalize('NFC');
+  return n.includes(keyword);
+}
+
+// ─────────────────────────────────────
+//  메인 분석 함수
+// ─────────────────────────────────────
+function analyse() {
+  if (!window._PRELOADED) {
+    document.getElementById('hdr-updated').textContent = '⚠️ data.js 로드 실패 — index.html과 같은 폴더에서 열어주세요';
+    return;
+  }
+
+  const cs     = window._PRELOADED.cs     || [];
+  const caller = window._PRELOADED.caller || [];
+  const biz    = window._PRELOADED.biz    || [];
+
+  const updatedAt = window._PRELOADED.updatedAt
+    ? new Date(window._PRELOADED.updatedAt).toLocaleString('ko-KR')
+    : '—';
+  document.getElementById('hdr-updated').textContent = '최종 갱신: ' + updatedAt;
+
+  // ── CS 날짜 범위 ──
+  const csDates = cs.map(r => getDateStr(r['문의 일시'])).filter(Boolean).sort();
+  const minDate = csDates[0] || '';
+  const maxDate = csDates[csDates.length - 1] || '';
+  document.getElementById('hdr-range').textContent = minDate + ' ~ ' + maxDate;
+  document.getElementById('footer-info').textContent =
+    `데이터 기준: CS ${cs.length.toLocaleString()}건 · 발신번호 ${caller.length.toLocaleString()}건 · 사업자 ${biz.length.toLocaleString()}건 (갱신: ${updatedAt})`;
+
+  // ── KPI 1: 총 문의 ──
+  document.getElementById('kpi-total').textContent = cs.length.toLocaleString();
+  // 최근 30일
+  const cutoff30 = new Date(); cutoff30.setDate(cutoff30.getDate() - 30);
+  const cut30str = cutoff30.toISOString().slice(0,10);
+  const recent30 = cs.filter(r => getDateStr(r['문의 일시']) >= cut30str);
+  document.getElementById('kpi-total-sub').textContent = `최근 30일: ${recent30.length.toLocaleString()}건`;
+
+  // ── KPI 2: 응답 완료율 ──
+  const answered = cs.filter(r => contains(cleanStr(r['답변 상태']), '답변완료'));
+  const rate = cs.length ? (answered.length / cs.length * 100).toFixed(1) : 0;
+  document.getElementById('kpi-rate').textContent = rate;
+  const rateColor = rate >= 98 ? 'green' : rate >= 90 ? 'yellow' : 'red';
+  document.getElementById('kpi-rate-badge').innerHTML =
+    badge(rate >= 98 ? '🟢 우수' : rate >= 90 ? '🟡 양호' : '🔴 개선 필요', rateColor);
+
+  // ── KPI 3: 평균 응답 시간 ──
+  const times = [];
+  answered.forEach(r => {
+    const q = parseDate(r['문의 일시']);
+    const a = parseDate(r['답변 일시']);
+    if (q && a) {
+      const h = (a - q) / 3600000;
+      if (h > 0 && h < 72) times.push(h);
+    }
+  });
+  const avgH = times.length ? (times.reduce((s,v)=>s+v,0) / times.length).toFixed(1) : '—';
+  document.getElementById('kpi-avgtime').textContent = avgH;
+  const tColor = avgH <= 8 ? 'green' : avgH <= 24 ? 'yellow' : 'red';
+  document.getElementById('kpi-time-badge').innerHTML =
+    badge(avgH <= 8 ? '🟢 빠름' : avgH <= 24 ? '🟡 보통' : '🔴 느림', tColor);
+
+  // ── KPI 4: 미답변 ──
+  const pending = cs.filter(r => !contains(cleanStr(r['답변 상태']), '답변완료'));
+  document.getElementById('kpi-pending').textContent = pending.length;
+  document.getElementById('kpi-pending-badge').innerHTML =
+    badge(pending.length === 0 ? '🟢 없음' : pending.length <= 10 ? '🟡 확인 필요' : '🔴 처리 필요',
+          pending.length === 0 ? 'green' : pending.length <= 10 ? 'yellow' : 'red');
+
+  // ── KPI 5: 인증 대기 ──
+  const callerWait = caller.filter(r => contains(cleanStr(r['인증 상태']), '검수대기') || contains(cleanStr(r['인증 상태']), '검수중'));
+  const bizWait    = biz.filter(r => contains(cleanStr(r['인증 상태']), '대기') || contains(cleanStr(r['인증 상태']), '검수'));
+  document.getElementById('kpi-cert-wait').textContent = (callerWait.length + bizWait.length).toLocaleString();
+
+  // ── 트렌드 차트 (최근 30일) ──
+  const dayCounts = {};
+  cs.forEach(r => {
+    const d = getDateStr(r['문의 일시']);
+    if (d >= cut30str) dayCounts[d] = (dayCounts[d] || 0) + 1;
+  });
+  const trendLabels = Object.keys(dayCounts).sort();
+  const trendVals   = trendLabels.map(d => dayCounts[d]);
+  // 레이블 단순화 (MM/DD)
+  const trendShort  = trendLabels.map(d => d.slice(5).replace('-','/'));
+
+  new Chart(document.getElementById('trendChart'), {
+    type: 'bar',
+    data: {
+      labels: trendShort,
+      datasets: [{
+        label: '문의 건수',
+        data: trendVals,
+        backgroundColor: 'rgba(59,130,246,.7)',
+        borderColor: '#2563eb',
+        borderWidth: 1,
+        borderRadius: 3,
+      }, {
+        label: '7일 평균',
+        data: trendVals.map((_, i) => {
+          const slice = trendVals.slice(Math.max(0, i-3), i+4);
+          return Math.round(slice.reduce((s,v)=>s+v,0)/slice.length);
+        }),
+        type: 'line',
+        borderColor: '#f59e0b',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: .4,
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top', labels: { font: {size:11}, boxWidth:12 } } },
+      scales: {
+        x: { ticks: { font:{size:10}, maxRotation:45 }, grid: { display:false } },
+        y: { ticks: { font:{size:10} }, beginAtZero:true }
+      }
+    }
+  });
+
+  // ── 채널 비율 도넛 ──
+  const channelMap = {};
+  cs.forEach(r => {
+    const ch = cleanStr(r['문의 채널']) || '기타';
+    // 인코딩 깨진 값은 '게시판'으로 통합
+    const key = ch.includes('게시판') || ch.length < 2 ? '게시판' : ch;
+    channelMap[key] = (channelMap[key] || 0) + 1;
+  });
+  const chLabels = Object.keys(channelMap);
+  const chVals   = chLabels.map(k => channelMap[k]);
+  new Chart(document.getElementById('channelChart'), {
+    type: 'doughnut',
+    data: {
+      labels: chLabels,
+      datasets: [{ data: chVals, backgroundColor: ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'] }]
+    },
+    options: {
+      responsive: true,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font:{size:11}, boxWidth:12 } }
+      }
+    }
+  });
+
+  // ── 문의 유형 Top5 진행 막대 ──
+  const catMap = {};
+  cs.forEach(r => {
+    let cat = cleanStr(r['분류1']) || '미분류';
+    // 인코딩 깨짐 처리
+    if (cat.includes('스마트문자') || (cat.length > 2 && !cat.match(/^[가-힣\s]+$/))) {
+      if (cat.includes('기능')) cat = '스마트문자 기능추가';
+      else cat = '스마트문자 문의';
+    }
+    catMap[cat] = (catMap[cat] || 0) + 1;
+  });
+  const catSorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const catMax = catSorted[0]?.[1] || 1;
+  const COLORS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'];
+  document.getElementById('cat-list').innerHTML = catSorted.map(([name, cnt], i) => `
+    <div class="prog-wrap">
+      <div class="prog-label-row">
+        <span class="prog-name"><span class="rank-dot">${i+1}</span>${name}</span>
+        <span class="prog-pct">${cnt.toLocaleString()}건</span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${(cnt/catMax*100).toFixed(0)}%;background:${COLORS[i]}"></div></div>
+    </div>
+  `).join('');
+
+  // ── 응답 시간 분포 ──
+  const within2  = times.filter(h=>h<=2).length;
+  const within8  = times.filter(h=>h>2&&h<=8).length;
+  const within24 = times.filter(h=>h>8&&h<=24).length;
+  const over24   = times.filter(h=>h>24).length;
+  const total    = times.length || 1;
+  document.getElementById('time-dist').innerHTML = [
+    ['2시간 이내', within2, '#10b981'],
+    ['2~8시간', within8, '#3b82f6'],
+    ['8~24시간', within24, '#f59e0b'],
+    ['24시간 초과', over24, '#ef4444'],
+  ].map(([label, cnt, color]) => `
+    <div class="prog-wrap">
+      <div class="prog-label-row">
+        <span class="prog-name">${label}</span>
+        <span class="prog-pct" style="color:${color}">${(cnt/total*100).toFixed(1)}% <span style="color:#94a3b8;font-weight:500">(${cnt}건)</span></span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${(cnt/total*100).toFixed(0)}%;background:${color}"></div></div>
+    </div>
+  `).join('');
+
+  // ── 답변자별 처리 ──
+  const agentMap = {};
+  cs.forEach(r => {
+    let agent = cleanStr(r['답변자'] || '');
+    if (!agent || agent === '-') return;
+    agent = agent.split('/')[0].trim();
+    if (!agent) return;
+    agentMap[agent] = (agentMap[agent] || 0) + 1;
+  });
+  const agentSorted = Object.entries(agentMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const agentMax = agentSorted[0]?.[1] || 1;
+  document.getElementById('agent-list').innerHTML = agentSorted.map(([name, cnt], i) => `
+    <div class="prog-wrap">
+      <div class="prog-label-row">
+        <span class="prog-name"><span class="rank-dot">${i+1}</span>${name}</span>
+        <span class="prog-pct">${cnt.toLocaleString()}건 <span style="color:#94a3b8;font-size:10px">(${(cnt/cs.length*100).toFixed(0)}%)</span></span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${(cnt/agentMax*100).toFixed(0)}%;background:${COLORS[i]}"></div></div>
+    </div>
+  `).join('');
+
+  // ── 답변 상태 도넛 ──
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['답변완료', '대기 중'],
+      datasets: [{
+        data: [answered.length, pending.length],
+        backgroundColor: ['#10b981','#ef4444'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position:'bottom', labels:{ font:{size:12}, boxWidth:12 } }
+      }
+    }
+  });
+
+  // ── 발신번호 인증 ──
+  const cNormal  = caller.filter(r => contains(cleanStr(r['인증 상태']),'정상'));
+  const cWait    = caller.filter(r => contains(cleanStr(r['인증 상태']),'검수대기') || contains(cleanStr(r['인증 상태']),'검수중'));
+  const cReject  = caller.filter(r => contains(cleanStr(r['인증 상태']),'거절'));
+  const cOther   = caller.length - cNormal.length - cWait.length - cReject.length;
+  document.getElementById('caller-stats').innerHTML = [
+    ['정상 처리', cNormal.length, 'green'],
+    ['검수 대기', cWait.length, 'yellow'],
+    ['거절', cReject.length, 'red'],
+    ['기타', cOther, 'blue'],
+  ].map(([label,cnt,color]) => `
+    <div class="stat-row">
+      <span class="stat-label">${label}</span>
+      <span class="stat-val ${color}">${cnt.toLocaleString()}건</span>
+    </div>
+  `).join('');
+  new Chart(document.getElementById('callerChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['정상','검수대기','거절','기타'],
+      datasets: [{
+        data: [cNormal.length, cWait.length, cReject.length, cOther],
+        backgroundColor: ['#10b981','#f59e0b','#ef4444','#94a3b8'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, cutout:'62%',
+      plugins: { legend: { position:'bottom', labels:{ font:{size:11}, boxWidth:12 } } }
+    }
+  });
+
+  // ── 사업자 인증 ──
+  const bApproved = biz.filter(r => contains(cleanStr(r['인증 상태']),'승인완료'));
+  const bWait     = biz.filter(r => contains(cleanStr(r['인증 상태']),'대기') || contains(cleanStr(r['인증 상태']),'진행중'));
+  const bReject   = biz.filter(r => contains(cleanStr(r['인증 상태']),'반려'));
+  const bDelete   = biz.filter(r => contains(cleanStr(r['인증 상태']),'삭제'));
+  const bOther    = biz.length - bApproved.length - bWait.length - bReject.length - bDelete.length;
+  document.getElementById('biz-stats').innerHTML = [
+    ['승인 완료', bApproved.length, 'green'],
+    ['처리 대기', bWait.length, 'yellow'],
+    ['반려', bReject.length, 'red'],
+    ['삭제', bDelete.length, 'blue'],
+  ].map(([label,cnt,color]) => `
+    <div class="stat-row">
+      <span class="stat-label">${label}</span>
+      <span class="stat-val ${color}">${cnt.toLocaleString()}건</span>
+    </div>
+  `).join('');
+  new Chart(document.getElementById('bizChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['승인완료','처리대기','반려','삭제'],
+      datasets: [{
+        data: [bApproved.length, bWait.length, bReject.length, bDelete.length],
+        backgroundColor: ['#10b981','#f59e0b','#ef4444','#94a3b8'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, cutout:'62%',
+      plugins: { legend: { position:'bottom', labels:{ font:{size:11}, boxWidth:12 } } }
+    }
+  });
+}
+
+// 로드 후 실행
+window.addEventListener('load', analyse);
+</script>
+</body>
+</html>

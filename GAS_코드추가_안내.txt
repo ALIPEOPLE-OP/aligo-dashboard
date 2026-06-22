@@ -1,0 +1,48 @@
+══════════════════════════════════════════════════════════════
+  알리고 운영 지표 — GAS 공유 설정 코드 추가 안내
+  이 작업은 최초 1회만 하면 됩니다
+══════════════════════════════════════════════════════════════
+
+[ 순서 ]
+1. https://script.google.com 접속
+2. 기존에 만들어둔 "알리고 운영지표" Apps Script 프로젝트 열기
+3. doGet(e) 함수를 찾아서 함수 맨 위에 아래 코드 추가
+4. 저장(Ctrl+S) 후 → 배포 → 새 배포 → 웹 앱 → "모든 사용자" → 배포
+   (기존 배포가 있으면 "배포 관리" → 버전 새로 만들기)
+
+══════════════════════════════════════════════════════════════
+  doGet(e) 함수 안 맨 위에 추가할 코드
+══════════════════════════════════════════════════════════════
+
+  var callback = e.parameter.callback || '';
+  var action   = e.parameter.action   || '';
+
+  // ── 공유 설정 읽기 ──
+  if (action === 'getConfig') {
+    var props  = PropertiesService.getScriptProperties();
+    var saved  = props.getProperty('sharedConfig');
+    var result = saved ? saved : '{"settings":{}}';
+    return ContentService
+      .createTextOutput(callback ? callback + '(' + result + ')' : result)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  // ── 공유 설정 저장 ──
+  if (action === 'saveConfig') {
+    var data = e.parameter.config || '{}';
+    PropertiesService.getScriptProperties().setProperty('sharedConfig', data);
+    var result = '{"ok":true}';
+    return ContentService
+      .createTextOutput(callback ? callback + '(' + result + ')' : result)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+══════════════════════════════════════════════════════════════
+  주의사항
+══════════════════════════════════════════════════════════════
+
+- 위 코드는 doGet(e) { 바로 다음 줄에 붙여넣으세요
+- 기존 코드(var sheet = e.parameter.sheet 등)는 그 아래에 그대로 두면 됩니다
+- 배포 후 기존 URL은 그대로 유지됩니다 (URL 변경 없음)
+- 이후 대시보드에서 설정을 변경하면 모든 작업자에게 자동 공유됩니다
+

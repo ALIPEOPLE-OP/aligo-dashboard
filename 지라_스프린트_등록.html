@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>스프린트 Jira 등록</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px;}
+.header{background:#0052CC;color:white;padding:14px 24px;display:flex;align-items:center;gap:12px;}
+.header h1{font-size:15px;font-weight:800;}
+.header .sub{font-size:11px;opacity:.75;margin-top:2px;}
+.container{max-width:860px;margin:0 auto;padding:20px 16px;}
+
+/* 설정 패널 */
+.config-card{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:20px;border:1.5px solid #e2e8f0;}
+.config-title{font-size:12px;font-weight:800;color:#0052CC;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cfg-row{display:flex;flex-direction:column;gap:4px;}
+.cfg-row label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;}
+.cfg-row input{padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-family:inherit;outline:none;color:#0f172a;}
+.cfg-row input:focus{border-color:#0052CC;}
+.cfg-row input[type="password"]{letter-spacing:2px;}
+.cfg-tip{margin-top:10px;padding:8px 12px;background:#eff6ff;border-radius:7px;font-size:10px;color:#1d4ed8;line-height:1.6;}
+
+/* 진행 바 */
+.progress-wrap{background:white;border-radius:12px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:20px;display:flex;align-items:center;gap:16px;}
+.progress-bar{flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;background:#0052CC;border-radius:4px;transition:width .4s;}
+.progress-text{font-size:11px;font-weight:700;color:#64748b;white-space:nowrap;}
+
+/* 에픽 */
+.epic-row{display:flex;align-items:center;justify-content:space-between;background:white;border-radius:12px;padding:14px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:14px;border-left:4px solid #6554C0;}
+.epic-label{display:flex;align-items:center;gap:8px;}
+.badge-epic{font-size:9px;font-weight:800;background:#6554C0;color:white;padding:2px 7px;border-radius:10px;letter-spacing:.4px;}
+.epic-title{font-size:13px;font-weight:800;color:#0f172a;}
+
+/* 태스크 카드 */
+.task-card{background:white;border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:14px;border-top:4px solid var(--tc);}
+.task-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.task-badge{font-size:9px;font-weight:800;color:white;padding:2px 8px;border-radius:10px;background:var(--tc);letter-spacing:.4px;}
+.task-meta{display:flex;align-items:center;gap:8px;}
+.priority-chip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.p-highest{background:#ffd2d2;color:#991b1b;}
+.p-high{background:#fde68a;color:#92400e;}
+.status-chip{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.st-none{background:#f1f5f9;color:#64748b;}
+.st-ok{background:#d1fae5;color:#065f46;}
+.st-err{background:#fee2e2;color:#991b1b;}
+.st-ing{background:#dbeafe;color:#1d4ed8;}
+
+.task-title{font-size:14px;font-weight:900;color:#0f172a;margin-bottom:4px;}
+.task-desc{font-size:11px;color:#64748b;margin-bottom:14px;line-height:1.5;}
+
+/* 서브태스크 */
+.sub-list{border-top:1.5px dashed #e2e8f0;padding-top:12px;margin-bottom:14px;}
+.sub-label{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.sub-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:#f8fafc;margin-bottom:5px;}
+.sub-icon{font-size:11px;width:18px;text-align:center;flex-shrink:0;}
+.sub-text{font-size:11px;color:#374151;flex:1;}
+.sub-status{font-size:10px;font-weight:700;}
+.sub-status.ok{color:#059669;}
+.sub-status.err{color:#dc2626;}
+.sub-status.ing{color:#2563eb;}
+
+/* 버튼 */
+.btn-reg{padding:8px 20px;background:#0052CC;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.btn-reg:hover{background:#0747A6;}
+.btn-reg:disabled{background:#94a3b8;cursor:not-allowed;}
+.btn-reg.done{background:#059669;}
+.jira-link{font-size:11px;color:#0052CC;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:6px;}
+.jira-link:hover{text-decoration:underline;}
+.error-msg{font-size:10px;color:#dc2626;margin-top:6px;line-height:1.4;}
+
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div style="font-size:11px;opacity:.7;margin-bottom:2px">알리고 운영팀</div>
+    <h1>스프린트 개선 과제 — Jira 등록</h1>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 설정 -->
+  <div class="config-card">
+    <div class="config-title">🔧 Jira 연결 설정</div>
+    <div class="config-grid">
+      <div class="cfg-row">
+        <label>Jira 도메인</label>
+        <input type="text" id="cfg-domain" placeholder="예: alipeople.atlassian.net">
+      </div>
+      <div class="cfg-row">
+        <label>프로젝트 키</label>
+        <input type="text" id="cfg-project" placeholder="예: OPS">
+      </div>
+      <div class="cfg-row">
+        <label>이메일</label>
+        <input type="text" id="cfg-email" placeholder="예: ejchoi@alipeople.kr">
+      </div>
+      <div class="cfg-row">
+        <label>API 토큰</label>
+        <input type="password" id="cfg-token" placeholder="Atlassian API Token">
+      </div>
+    </div>
+    <div class="cfg-tip">
+      💡 API 토큰 발급: <strong>id.atlassian.com → 보안 → API 토큰 만들기</strong> 에서 발급 후 붙여넣기
+    </div>
+  </div>
+
+  <!-- 진행 현황 -->
+  <div class="progress-wrap">
+    <div style="font-size:12px;font-weight:700;color:#374151">등록 진행</div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="progress-text" id="prog-text">0 / 4</div>
+  </div>
+
+  <!-- 에픽 -->
+  <div class="epic-row">
+    <div class="epic-label">
+      <span class="badge-epic">EPIC</span>
+      <div>
+        <div class="epic-title">운영 품질 개선 스프린트 — 2026 Q2</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">3개 스토리 · 10개 서브태스크</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <button class="btn-reg" id="btn-epic" onclick="registerEpic()">
+        <span id="epic-btn-text">에픽 등록</span>
+      </button>
+      <div id="epic-result"></div>
+    </div>
+  </div>
+
+  <!-- TASK 01 -->
+  <div class="task-card" style="--tc:#f59e0b">
+    <div class="task-head">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="task-badge">STORY 01</span>
+        <span class="priority-chip p-high">High</span>
+        <span class="status-chip st-none" id="st-01">미등록</span>
+      </div>
+      <button class="btn-reg" id="btn-01" onclick="registerTask(1)">
+        <span id="btn-01-text">등록하기</span>
+      </button>
+    </div>
+    <div class="task-title">피크 응답시간 단축</div>
+    <div class="task-desc">현재 피크(상위 20%) 18.0h → 목표 8h 이내 달성.<br>월요일 적체가 주원인. 선처리 루틴과 응답시간 주간 리뷰 도입.</div>
+    <div class="sub-list">
+      <div class="sub-label">서브태스크</div>
+      <div class="sub-item"><span class="sub-icon">📋</span><span class="sub-text">월요일 오전 30분 누적 문의 선처리 SOP 작성</span><span class="sub-status" id="sub-01-1"></span></div>
+      <div class="sub-item"><span class="sub-icon">🔍</span><span class="sub-text">24h 초과 응답 526건 원인 유형 분류 및 개선안 도출</span><span class="sub-status" id="sub-01-2"></span></div>
+      <div class="sub-item"><span class="sub-icon">📊</span><span class="sub-text">응답시간 주간 리뷰 지표 및 주기 설정</span><span class="sub-status" id="sub-01-3"></span></div>
+    </div>
+    <div id="result-01"></div>
+  </div>
+
+  <!-- TASK 02 -->
+  <div class="task-card" style="--tc:#ef4444">
+    <div class="task-head">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="task-badge">STORY 02</span>
+        <span class="priority-chip p-high">High</span>
+        <span class="status-chip st-none" id="st-02">미등록</span>
+      </div>
+      <button class="btn-reg" id="btn-02" onclick="registerTask(2)">
+        <span id="btn-02-text">등록하기</span>
+      </button>
+    </div>
+    <div class="task-title">재문의율 감소</div>
+    <div class="task-desc">현재 재문의율 35.8% (751 / 2,096명) → 목표 20% 이하.<br>Top 3 문의 유형 1회 완결 템플릿·FAQ 정비로 재방문 차단.</div>
+    <div class="sub-list">
+      <div class="sub-label">서브태스크</div>
+      <div class="sub-item"><span class="sub-icon">✍️</span><span class="sub-text">승인취소·환불 1회 완결 응답 템플릿 작성</span><span class="sub-status" id="sub-02-1"></span></div>
+      <div class="sub-item"><span class="sub-icon">📄</span><span class="sub-text">세금계산서·엑셀등록대행 FAQ 페이지 업데이트</span><span class="sub-status" id="sub-02-2"></span></div>
+      <div class="sub-item"><span class="sub-icon">📈</span><span class="sub-text">재문의 패턴 주간 모니터링 지표 설정</span><span class="sub-status" id="sub-02-3"></span></div>
+    </div>
+    <div id="result-02"></div>
+  </div>
+
+  <!-- TASK 03 -->
+  <div class="task-card" style="--tc:#7c3aed">
+    <div class="task-head">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="task-badge">STORY 03</span>
+        <span class="priority-chip p-highest">Highest ⚡</span>
+        <span class="status-chip st-none" id="st-03">미등록</span>
+      </div>
+      <button class="btn-reg" id="btn-03" onclick="registerTask(3)">
+        <span id="btn-03-text">등록하기</span>
+      </button>
+    </div>
+    <div class="task-title">인증 거절 255건 재안내 완료</div>
+    <div class="task-desc">재안내 가능 255건 (발신번호 158건 + 사업자 97건) — 이번 주 퀵윈.<br>사유별 맞춤 안내 발송 후 2주 내 전환율 +5~10%p 추정.</div>
+    <div class="sub-list">
+      <div class="sub-label">서브태스크</div>
+      <div class="sub-item"><span class="sub-icon">📸</span><span class="sub-text">사업자등록증 재촬영 요청 67건 안내 문자 발송</span><span class="sub-status" id="sub-03-1"></span></div>
+      <div class="sub-item"><span class="sub-icon">📬</span><span class="sub-text">서류 기한 초과 62건 재발급 안내 발송</span><span class="sub-status" id="sub-03-2"></span></div>
+      <div class="sub-item"><span class="sub-icon">📞</span><span class="sub-text">ARS 미응답 18건 재접촉</span><span class="sub-status" id="sub-03-3"></span></div>
+      <div class="sub-item"><span class="sub-icon">🎯</span><span class="sub-text">재안내 2주 후 전환 여부 추적 및 결과 보고</span><span class="sub-status" id="sub-03-4"></span></div>
+    </div>
+    <div id="result-03"></div>
+  </div>
+
+</div>
+
+<script>
+var epicKey = null;
+var storyKeys = {1:null,2:null,3:null};
+var registered = 0;
+
+var TASKS = {
+  1: {
+    summary: '[TASK 01] 피크 응답시간 단축 — 현재 18h → 목표 8h 이내',
+    priority: 'High',
+    desc: '현재 상위 20% 응답시간 18.0h, 월요일 평균 9.1h.\n\n목표: 피크 응답시간 8h 이내 달성\n\n*현황*\n- 전체 응답 3,949건 분석\n- 중앙값: 2.1h / 피크(80th %ile): 18.0h\n- 24h 초과 응답: 526건 (13%)',
+    subs: [
+      '월요일 오전 30분 누적 문의 선처리 SOP 작성',
+      '24h 초과 응답 526건 원인 유형 분류 및 개선안 도출',
+      '응답시간 주간 리뷰 지표 및 주기 설정',
+    ]
+  },
+  2: {
+    summary: '[TASK 02] 재문의율 감소 — 현재 35.8% → 목표 20% 이하',
+    priority: 'High',
+    desc: '30일 내 재문의 고객 751명 / 전체 2,096명 (35.8%).\n\n목표: 재문의율 20% 이하 달성\n\n*현황*\n- 재문의 주요 유형: 승인취소/환불, 세금계산서, 엑셀등록대행\n- 1회 완결 응답으로 해결 가능한 건이 다수',
+    subs: [
+      '승인취소·환불 1회 완결 응답 템플릿 작성',
+      '세금계산서·엑셀등록대행 FAQ 페이지 업데이트',
+      '재문의 패턴 주간 모니터링 지표 설정',
+    ]
+  },
+  3: {
+    summary: '[TASK 03] 인증 거절·반려 255건 재안내 완료 ⚡퀵윈',
+    priority: 'Highest',
+    desc: '인증 거절/반려 324건 중 재안내 가능 255건 확인.\n\n목표: 이번 주 내 255건 재안내 발송 완료\n예상 효과: 가입→첫발송 전환율 +5~10%p\n\n*재안내 가능 대상*\n- 발신번호 거절: 158건\n- 사업자 반려: 97건\n\n*불가 (정책): 69건*\n- 부동산/분양 업종 등 정책상 불가',
+    subs: [
+      '사업자등록증 재촬영 요청 67건 안내 문자 발송',
+      '서류 기한 초과 62건 재발급 안내 발송 (이용증명원·재직증명서)',
+      'ARS 미응답 18건 재접촉',
+      '재안내 2주 후 전환 여부 추적 및 결과 보고',
+    ]
+  }
+};
+
+function cfg() {
+  var domain = document.getElementById('cfg-domain').value.trim();
+  var project = document.getElementById('cfg-project').value.trim().toUpperCase();
+  var email   = document.getElementById('cfg-email').value.trim();
+  var token   = document.getElementById('cfg-token').value.trim();
+  if (!domain || !project || !email || !token) {
+    alert('도메인, 프로젝트 키, 이메일, API 토큰을 모두 입력해주세요.');
+    return null;
+  }
+  var base64 = btoa(email + ':' + token);
+  return { domain, project, email, token, base64 };
+}
+
+function jiraPost(domain, base64, body) {
+  return fetch('https://' + domain + '/rest/api/2/issue', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + base64,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+}
+
+function updateProgress() {
+  var total = 4; // epic + 3 stories
+  var pct = Math.round(registered / total * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-text').textContent = registered + ' / ' + total;
+}
+
+function spin(btnId) {
+  var btn = document.getElementById(btnId);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> 등록 중...';
+}
+
+async function registerEpic() {
+  var c = cfg(); if (!c) return;
+  spin('btn-epic');
+  try {
+    var body = {
+      fields: {
+        project: { key: c.project },
+        summary: '운영 품질 개선 스프린트 — 2026 Q2',
+        issuetype: { name: 'Epic' },
+        description: '운영 CS 품질 개선을 위한 Q2 스프린트.\n\n- TASK 01: 피크 응답시간 단축 (18h → 8h)\n- TASK 02: 재문의율 감소 (35.8% → 20%)\n- TASK 03: 인증 거절 255건 재안내 퀵윈'
+      }
+    };
+    // Epic Name 필드 추가 시도 (classic 프로젝트용)
+    body.fields['customfield_10011'] = '운영 품질 개선 스프린트 2026 Q2';
+
+    var r = await jiraPost(c.domain, c.base64, body);
+    var data = await r.json();
+    if (r.ok) {
+      epicKey = data.key;
+      registered++;
+      updateProgress();
+      document.getElementById('btn-epic').className = 'btn-reg done';
+      document.getElementById('btn-epic').innerHTML = '✅ 등록 완료';
+      document.getElementById('epic-result').innerHTML =
+        '<a class="jira-link" href="https://'+c.domain+'/browse/'+epicKey+'" target="_blank">🔗 '+epicKey+'</a>';
+    } else {
+      var msg = data.errors ? JSON.stringify(data.errors) : (data.errorMessages||['알 수 없는 오류']).join(', ');
+      document.getElementById('btn-epic').disabled = false;
+      document.getElementById('btn-epic').innerHTML = '다시 시도';
+      document.getElementById('epic-result').innerHTML = '<div class="error-msg">❌ ' + msg + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('btn-epic').disabled = false;
+    document.getElementById('btn-epic').innerHTML = '다시 시도';
+    document.getElementById('epic-result').innerHTML = '<div class="error-msg">❌ 네트워크 오류: 도메인을 확인해주세요</div>';
+  }
+}
+
+async function registerTask(num) {
+  var c = cfg(); if (!c) return;
+  var t = TASKS[num];
+  var btnId = 'btn-0'+num;
+  var stId  = 'st-0'+num;
+  var resId = 'result-0'+num;
+  spin(btnId);
+  document.getElementById(stId).className = 'status-chip st-ing';
+  document.getElementById(stId).textContent = '등록 중...';
+
+  try {
+    var fields = {
+      project: { key: c.project },
+      summary: t.summary,
+      issuetype: { name: 'Story' },
+      description: t.desc,
+      priority: { name: t.priority }
+    };
+    if (epicKey) fields['customfield_10014'] = epicKey;
+
+    var r = await jiraPost(c.domain, c.base64, { fields });
+    var data = await r.json();
+
+    if (r.ok) {
+      var storyKey = data.key;
+      storyKeys[num] = storyKey;
+      registered++;
+      updateProgress();
+      document.getElementById(btnId).className = 'btn-reg done';
+      document.getElementById(btnId).innerHTML = '✅ 등록 완료';
+      document.getElementById(stId).className = 'status-chip st-ok';
+      document.getElementById(stId).textContent = '등록됨';
+      document.getElementById(resId).innerHTML =
+        '<a class="jira-link" href="https://'+c.domain+'/browse/'+storyKey+'" target="_blank">🔗 '+storyKey+' 바로가기</a>';
+
+      // 서브태스크 등록
+      for (var i = 0; i < t.subs.length; i++) {
+        var subEl = document.getElementById('sub-0'+num+'-'+(i+1));
+        if (subEl) { subEl.className='sub-status ing'; subEl.textContent='등록 중...'; }
+        try {
+          var sr = await jiraPost(c.domain, c.base64, {
+            fields: {
+              project: { key: c.project },
+              parent: { key: storyKey },
+              summary: t.subs[i],
+              issuetype: { name: 'Subtask' }
+            }
+          });
+          if (subEl) {
+            if (sr.ok) { subEl.className='sub-status ok'; subEl.textContent='✓'; }
+            else { subEl.className='sub-status err'; subEl.textContent='실패'; }
+          }
+        } catch(e2) {
+          if (subEl) { subEl.className='sub-status err'; subEl.textContent='실패'; }
+        }
+      }
+    } else {
+      var msg = data.errors ? JSON.stringify(data.errors) : (data.errorMessages||['오류']).join(', ');
+      document.getElementById(btnId).disabled = false;
+      document.getElementById(btnId).innerHTML = '다시 시도';
+      document.getElementById(stId).className = 'status-chip st-err';
+      document.getElementById(stId).textContent = '실패';
+      document.getElementById(resId).innerHTML = '<div class="error-msg">❌ ' + msg + '</div>';
+    }
+  } catch(e) {
+    document.getElementById(btnId).disabled = false;
+    document.getElementById(btnId).innerHTML = '다시 시도';
+    document.getElementById(stId).className = 'status-chip st-err';
+    document.getElementById(stId).textContent = '실패';
+    document.getElementById(resId).innerHTML = '<div class="error-msg">❌ 네트워크 오류</div>';
+  }
+}
+</script>
+</body>
+</html>

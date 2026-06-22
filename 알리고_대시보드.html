@@ -1,0 +1,2611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<script src="data.js"></script>
+<script src="slackData.js"></script>
+<title>알리고 운영 현황</title>
+<style>
+:root{color-scheme:light;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px;}
+.header{background:#0f172a;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;display:inline-block;margin-right:8px;}
+.chip{font-size:11px;color:#94a3b8;background:rgba(255,255,255,.1);padding:4px 10px;border-radius:20px;}
+.tabs{background:#1e293b;display:flex;padding:0 16px;gap:4px;}
+.tab-btn{padding:10px 16px;font-size:12px;font-weight:600;color:#94a3b8;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;}
+.tab-btn.on{color:white;border-bottom-color:#3b82f6;}
+.page{display:none;padding:16px;}
+.page.on{display:block;}
+.sec-label{font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;}
+.sec-label:first-child{margin-top:0;}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.kc{border-radius:12px;padding:14px;color:white;}
+.kc.bl{background:linear-gradient(135deg,#2563eb,#3b82f6);}
+.kc.gr{background:linear-gradient(135deg,#059669,#10b981);}
+.kc.am{background:linear-gradient(135deg,#d97706,#f59e0b);}
+.kc.rd{background:linear-gradient(135deg,#dc2626,#ef4444);}
+.kc.pu{background:linear-gradient(135deg,#7c3aed,#8b5cf6);}
+.kl{font-size:10px;opacity:.85;margin-bottom:6px;}
+.kv{font-size:24px;font-weight:900;line-height:1;letter-spacing:-1px;}
+.ku{font-size:12px;font-weight:700;}
+.ks{font-size:10px;opacity:.8;margin-top:4px;}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,255,255,.25);margin-top:4px;}
+.cg{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.card{background:white;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ct{font-size:12px;font-weight:700;color:#374151;margin-bottom:12px;}
+.br{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bl2{font-size:11px;color:#374151;width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bt{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
+.bf{height:100%;border-radius:3px;background:#3b82f6;}
+.bc{font-size:11px;font-weight:700;color:#1e293b;width:45px;text-align:right;flex-shrink:0;}
+.bg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px;}
+.row:last-child{border:none;}
+.dr{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.dl{font-size:11px;color:#64748b;width:72px;flex-shrink:0;}
+.db{flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;}
+.df{height:100%;border-radius:4px;}
+.dp{font-size:11px;color:#374151;width:70px;text-align:right;flex-shrink:0;}
+.fg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px;}
+.fi{background:#f8fafc;border-radius:8px;padding:10px;text-align:center;}
+.fv{font-size:17px;font-weight:800;color:#1e293b;}
+.fl{font-size:10px;color:#64748b;margin-top:2px;}
+/* 지표 관리 탭 */
+.mgmt-status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.status-card{background:white;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.sc-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#94a3b8;margin-bottom:8px;}
+.sc-value{font-size:24px;font-weight:900;}
+.sc-sub{font-size:11px;color:#64748b;margin-top:4px;}
+.mgmt-form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+.form-card{background:white;border-radius:12px;padding:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.form-card.cs-top{border-top:3px solid #2563eb;}
+.form-card.caller-top{border-top:3px solid #7c3aed;}
+.form-card.biz-top{border-top:3px solid #0891b2;}
+.fc-title{font-size:13px;font-weight:800;margin-bottom:14px;color:#0f172a;}
+.form-group{margin-bottom:10px;}
+.form-group label{display:block;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.form-input{width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;font-family:inherit;}
+.form-input:focus{border-color:#3b82f6;}
+.btn-save{width:100%;padding:9px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;font-family:inherit;}
+.btn-save:hover{background:#1d4ed8;}
+.btn-save.purple{background:#7c3aed;} .btn-save.purple:hover{background:#6d28d9;}
+.btn-save.cyan{background:#0891b2;} .btn-save.cyan:hover{background:#0e7490;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;}
+.toast.ok{background:#d1fae5;color:#065f46;}
+.toast.warn{background:#fef3c7;color:#92400e;}
+
+
+/* CSS-only 탭 */
+#r-s,#r-c,#r-m,#r-j{display:none;}
+#r-s:checked~.tabs label[for="r-s"],
+#r-c:checked~.tabs label[for="r-c"],
+#r-m:checked~.tabs label[for="r-m"],
+#r-j:checked~.tabs label[for="r-j"]{color:white;border-bottom-color:#3b82f6;}
+#r-s:checked~#pg-s,#r-c:checked~#pg-c,#r-m:checked~#pg-m,#r-j:checked~#pg-j{display:block;}
+
+
+
+
+
+
+.btn-group{display:flex;gap:0;}
+.btn-group button{padding:5px 13px;border:1.5px solid #cbd5e1;background:white;cursor:pointer;font-size:12px;font-weight:600;color:#64748b;transition:all .15s;}
+.btn-group button:first-child{border-radius:6px 0 0 6px;}
+.btn-group button:last-child{border-radius:0 6px 6px 0;}
+.btn-group button:not(:first-child){border-left:none;}
+.btn-group button.active{background:#3b82f6;color:white;border-color:#3b82f6;}
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.period-lbl{font-size:12px;font-weight:700;color:#64748b;}
+
+.date-custom{display:flex;align-items:center;gap:6px;margin-left:8px;}
+.date-custom input[type="date"]{padding:4px 8px;border:1.5px solid #cbd5e1;border-radius:6px;font-size:12px;font-family:inherit;color:#334155;background:white;cursor:pointer;}
+.date-custom input[type="date"]:focus{outline:none;border-color:#3b82f6;}
+.date-custom .apply-btn{padding:5px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;}
+.date-custom .apply-btn:hover{background:#2563eb;}
+.date-sep{font-size:12px;color:#94a3b8;font-weight:600;}
+</style>
+<!-- Chart.js 제거: 순수 HTML 막대 차트로 교체됨 -->
+</head>
+<body>
+<input type="radio" name="tab" id="r-s" hidden checked>
+<input type="radio" name="tab" id="r-c" hidden>
+<input type="radio" name="tab" id="r-m" hidden>
+<input type="radio" name="tab" id="r-j" hidden>
+<div class="header"><div><span class="dot"></span><span style="font-size:15px;font-weight:800;">알리고 운영 현황</span></div><span class="chip">갱신: 2026. 6. 23.</span></div>
+<div class="tabs"><label class="tab-btn" for="r-s">📊 핵심 요약</label><label class="tab-btn" for="r-c">📈 전환 성과</label><label class="tab-btn" for="r-m">⚙️ 지표 관리</label><label class="tab-btn" for="r-j">🎯 Jira 등록</label></div>
+<div id="toast" class="toast"></div>
+<div class="page" id="pg-s">
+<div class="controls">
+  <span class="period-lbl">📅 기간 선택:</span>
+  <div class="btn-group">
+    <button id="pbtn7"   onclick="setPeriod(7)">7일</button>
+    <button id="pbtn30"  onclick="setPeriod(30)" class="active">30일</button>
+    <button id="pbtn90"  onclick="setPeriod(90)">90일</button>
+    <button id="pbtn0"   onclick="setPeriod(0)">전체</button>
+  </div>
+  <div class="date-custom">
+    <input type="date" id="date-from" value="2026-05-02">
+    <span class="date-sep">~</span>
+    <input type="date" id="date-to" value="2026-05-28">
+    <button class="apply-btn" onclick="applyCustomDate()">적용</button>
+  </div>
+</div>
+<!-- ① CS 상담 전환 성과 서브헤더 -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="sec-label" style="font-size:12px;color:#2563eb;font-weight:900;letter-spacing:0;margin:0;">📞 CS 상담 전환 성과</span>
+    <span style="font-size:10px;font-weight:700;color:#2563eb;background:#dbeafe;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;">CS 상담 문의 고객 기준</span>
+    <span id="badge-period-0" style="font-size:10px;font-weight:700;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:20px;">최근 30일 누적</span>
+  </div>
+  <span style="font-size:10px;color:#94a3b8;">CS에 문의한 고객 중 실제로 전환한 비율</span>
+</div>
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:4px">
+  <div class="kc gr" style="position:relative">
+    <div class="kl">💳 상담 후 충전</div>
+    <div><span class="kv" id="kv-charge">25.8</span><span class="ku">%</span></div>
+    <div class="ks" id="ks-charge">1,066건 전환</div>
+    <div class="badge" style="background:rgba(255,255,255,.3);margin-top:6px;font-size:11px" id="kpi-badge-charge">12주 평균 계산 중...</div>
+  </div>
+  <div class="kc pu">
+    <div class="kl">📞 상담 후 발신번호 인증</div>
+    <div><span class="kv" id="kv-caller">10.3</span><span class="ku">%</span></div>
+    <div class="ks" id="ks-caller">427건 전환</div>
+    <div class="badge" style="background:rgba(255,255,255,.3);margin-top:6px;font-size:11px" id="kpi-badge-caller">12주 평균 계산 중...</div>
+  </div>
+  <div class="kc bl">
+    <div class="kl">📨 상담 후 첫 발송</div>
+    <div><span class="kv" id="kv-send">4.9</span><span class="ku">%</span></div>
+    <div class="ks" id="ks-send">202건 전환</div>
+    <div class="badge" style="background:rgba(255,255,255,.3);margin-top:6px;font-size:11px" id="kpi-badge-send">12주 평균 계산 중...</div>
+  </div>
+  <div class="kc am">
+    <div class="kl">🏢 상담 후 사업자 인증</div>
+    <div><span class="kv" id="kv-biz">2.3</span><span class="ku">%</span></div>
+    <div class="ks" id="ks-biz">97건 전환</div>
+    <div class="badge" style="background:rgba(255,255,255,.3);margin-top:6px;font-size:11px" id="kpi-badge-biz">12주 평균 계산 중...</div>
+  </div>
+</div>
+<!-- 구분선 -->
+<div style="display:flex;align-items:center;gap:10px;margin:10px 0 8px;">
+  <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+  <span style="font-size:10px;color:#cbd5e1;white-space:nowrap;">vs</span>
+  <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+</div>
+<!-- ② AARRR 퍼널 서브헤더 -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:12px;font-weight:900;color:#7c3aed;letter-spacing:0;">🔻 AARRR 신규 가입자 온보딩 퍼널</span>
+    <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#ede9fe;border:1px solid #ddd6fe;padding:2px 8px;border-radius:20px;">📡 슬랙 · 신규 가입자 기준</span>
+  </div>
+  <span style="font-size:10px;color:#94a3b8;">이번 주 새로 가입한 신규 고객이 각 단계에 도달한 비율</span>
+</div>
+<div id="aarrr-funnel-inline" style="margin-bottom:12px;"></div>
+<div id="expert-analysis" style="margin-bottom:16px;"></div>
+<div class="sec-label" style="display:flex;align-items:center;gap:8px;">운영 현황 지표 <span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;letter-spacing:0;text-transform:none;font-family:-apple-system,sans-serif;" id="badge-period-1">전주</span></div><div class="kpi-grid">
+<div class="kc bl"><div class="kl">총 문의 건수</div><div><span class="kv" id="kv-weekly-total">—</span><span class="ku">건</span></div><div class="ks" id="ks-weekly-total">계산 중...</div></div>
+<div class="kc gr"><div class="kl">응답 완료율</div><div><span class="kv" id="kv-response-rate">—</span><span class="ku">%</span></div><div class="badge" id="badge-response-rate">-</div></div>
+<div class="kc am"><div class="kl">평균 응답 시간</div><div><span class="kv" id="kv-avg-rt">—</span><span class="ku">h</span></div><div class="ks" id="ks-avg-rt">계산 중...</div></div>
+<div class="kc rd"><div class="kl">미처리 문의</div>
+<div><span class="kv"><span id="kv-unhandled">155</span></span><span class="ku">건</span></div>
+<div class="ks"><span id="ks-unhandled">최근 30일 기준</span></div></div>
+</div>
+
+<div class="sec-label">트렌드 (최근 12주)</div><div class="cg"><div class="card"><div class="ct">주간 문의 건수</div><div id="tC" style="margin-top:4px"><div style="display:flex;align-items:flex-end;gap:3px;height:90px;padding-top:4px"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">470</div><div style="width:100%;height:55px;background:#93c5fd;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-06</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">602</div><div style="width:100%;height:70px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-13</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">570</div><div style="width:100%;height:66px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-20</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">526</div><div style="width:100%;height:61px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-27</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">521</div><div style="width:100%;height:61px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-04</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">539</div><div style="width:100%;height:63px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-11</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">550</div><div style="width:100%;height:64px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-18</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">342</div><div style="width:100%;height:40px;background:#93c5fd;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-25</div></div></div><div style="margin-top:6px;font-size:10px;color:#f59e0b">— 평균 515건</div></div></div><div class="card"><div class="ct">문의 유형 Top 5</div><div id="t5"><div class="br"><div class="bl2">승인취소/환불</div><div class="bt"><div class="bf" style="width:100%"></div></div><div class="bc">571건</div></div><div class="br"><div class="bl2">세금계산서</div><div class="bt"><div class="bf" style="width:95%"></div></div><div class="bc">545건</div></div><div class="br"><div class="bl2">엑셀등록대행</div><div class="bt"><div class="bf" style="width:79%"></div></div><div class="bc">450건</div></div><div class="br"><div class="bl2">계정관리</div><div class="bt"><div class="bf" style="width:67%"></div></div><div class="bc">382건</div></div><div class="br"><div class="bl2">발신번호관리</div><div class="bt"><div class="bf" style="width:62%"></div></div><div class="bc">356건</div></div></div></div><div class="card"><div class="ct">응답 완료율</div><div id="dC" style="margin-top:4px"><div style="display:flex;flex-direction:column;align-items:center;padding:8px 0"><div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(#22c55e 346deg,#ef4444 346deg);display:flex;align-items:center;justify-content:center"><div style="width:68px;height:68px;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:18px;font-weight:900;color:#1e293b">96%</div></div></div><div style="margin-top:8px;font-size:11px;color:#64748b"><span id="donut-label">완료 3,973건 / 미처리 155건</span></div></div></div><div style="text-align:center;margin-top:8px;font-size:11px;color:#64748b;"><span style="color:#22c55e;margin-right:12px;">● 완료</span><span style="color:#ef4444;">● 미처리</span></div></div></div>
+<div class="sec-label" style="display:flex;align-items:center;gap:8px;">상담 품질 <span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;letter-spacing:0;text-transform:none;font-family:-apple-system,sans-serif;">최근 3개월 월별 비교</span></div><div class="bg" style="grid-template-columns:1fr 1fr"><div class="card"><div class="ct">월별 응답 시간 분포 추이</div><div id="quality-resp-chart"></div></div><div class="card"><div class="ct">월별 카테고리별 미처리 추이</div><div id="quality-cat-chart"></div></div></div>
+<div style="margin-top:16px;">
+<div class="sec-label" style="display:flex;align-items:center;gap:8px;">미처리 문의 카테고리 분석 <span style="font-size:10px;font-weight:700;color:#0f766e;background:#ccfbf1;border:1px solid #99f6e4;padding:2px 8px;border-radius:20px;letter-spacing:0;text-transform:none;font-family:-apple-system,sans-serif;">기간 필터 연동</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+  <div class="card">
+    <div class="ct">분류별 미처리 건수 <span style="font-size:10px;color:#94a3b8;font-weight:400">(분류된 항목만, 미분류 제외)</span></div>
+    <div id="uhBar" style="margin-top:4px"><div class="br" style="margin-bottom:9px"><div class="bl2" style="width:130px;font-size:10px">승인취소/환불</div><div class="bt"><div class="bf" style="width:100%;background:#f59e0b"></div></div><div class="bc" style="color:#1e293b">9건</div></div><div class="br" style="margin-bottom:9px"><div class="bl2" style="width:130px;font-size:10px">기타</div><div class="bt"><div class="bf" style="width:44%;background:#f59e0b"></div></div><div class="bc" style="color:#1e293b">4건</div></div><div class="br" style="margin-bottom:9px"><div class="bl2" style="width:130px;font-size:10px">세금계산서</div><div class="bt"><div class="bf" style="width:22%;background:#f59e0b"></div></div><div class="bc" style="color:#1e293b">2건</div></div><div class="br" style="margin-bottom:9px"><div class="bl2" style="width:130px;font-size:10px">서류/견적서 등</div><div class="bt"><div class="bf" style="width:22%;background:#f59e0b"></div></div><div class="bc" style="color:#1e293b">2건</div></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">카테고리별 미처리율</div>
+    <div id="uhRate" style="margin-top:4px"><div class="row"><span style="font-size:11px">승인취소/환불</span><span style="font-weight:700;color:#64748b">1.6%</span></div><div class="row"><span style="font-size:11px">기타</span><span style="font-weight:700;color:#64748b">0.3%</span></div><div class="row"><span style="font-size:11px">세금계산서</span><span style="font-weight:700;color:#64748b">0.4%</span></div><div class="row"><span style="font-size:11px">서류/견적서 등</span><span style="font-weight:700;color:#64748b">0.8%</span></div></div>
+    <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b">
+      <div style="font-size:11px;font-weight:700;color:#92400e">⚠️ 미분류(분류2 없음) 실제 미처리 168건</div>
+      <div style="font-size:10px;color:#b45309;margin-top:3px">168건 (답변대기중 165 + 답변중 2 + 중간답변 1)</div>
+    </div>
+  </div>
+</div>
+</div>
+<div id="slack-growth-section" style="margin-top:16px;"></div>
+
+<!-- ── 인증 거절 상세 분석 ── -->
+<div style="margin-top:20px;">
+<div class="sec-label" style="font-size:12px;color:#7c3aed;font-weight:900;letter-spacing:0;display:flex;align-items:center;gap:8px;">🔍 인증 거절·반려 사유 분석 (재안내 대상 255건) <span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;letter-spacing:0;text-transform:none;font-family:-apple-system,sans-serif;" id="badge-period-2">최근 30일 누적</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0">
+
+  <!-- 발신번호 거절 -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="ct" style="margin-bottom:0">📞 발신번호 거절 (202건)</div>
+      <div style="font-size:10px;font-weight:700;color:#059669;background:#d1fae5;padding:2px 8px;border-radius:12px">가능 158건</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">서류 기한 초과</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:100%;height:100%;background:#3b82f6;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">56건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">기타 서류 미비</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:68%;height:100%;background:#3b82f6;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">38건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">정책 불가 (부동산)</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:54%;height:100%;background:#ef4444;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">30건</div>
+      <div style="font-size:9px;color:#ef4444;font-weight:700;width:32px">불가</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">ARS 인증 미완료</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:32%;height:100%;background:#f59e0b;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">18건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">명의자 오류</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:23%;height:100%;background:#3b82f6;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">13건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">팩스 미수신</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:20%;height:100%;background:#3b82f6;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">11건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">기타 정책 불가</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:25%;height:100%;background:#ef4444;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">14건</div>
+      <div style="font-size:9px;color:#ef4444;font-weight:700;width:32px">불가</div>
+    </div>
+  </div>
+
+  <!-- 사업자 반려 -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="ct" style="margin-bottom:0">🏢 사업자 반려 (122건)</div>
+      <div style="font-size:10px;font-weight:700;color:#059669;background:#d1fae5;padding:2px 8px;border-radius:12px">가능 97건</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">등록증 사진 품질 불량</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:100%;height:100%;background:#7c3aed;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">67건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">정책 불가 (부동산)</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:37%;height:100%;background:#ef4444;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">25건</div>
+      <div style="font-size:9px;color:#ef4444;font-weight:700;width:32px">불가</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">기타 서류 미비</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:13%;height:100%;background:#7c3aed;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">9건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">개인정보 미마스킹</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:10%;height:100%;background:#7c3aed;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">7건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">잘못된 서류 첨부</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:5%;height:100%;background:#7c3aed;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">3건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="font-size:10px;color:#64748b;width:130px;flex-shrink:0">서류 종류 오류</div>
+      <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:4%;height:100%;background:#7c3aed;border-radius:4px"></div></div>
+      <div style="font-size:10px;font-weight:700;color:#0f172a;width:32px;text-align:right">3건</div>
+      <div style="font-size:9px;color:#059669;font-weight:700;width:32px">재안내</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- 스프린트 섹션 삭제됨 -->
+<div style="display:none;">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+
+  <!-- TASK 01 -->
+  <div style="background:white;border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-top:4px solid #f59e0b;position:relative;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:10px;font-weight:900;color:white;background:#f59e0b;padding:2px 8px;border-radius:20px;letter-spacing:.5px">TASK 01</span>
+      <span style="font-size:12px;font-weight:800;color:#0f172a">피크 응답시간 단축</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px">
+      <div>
+        <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px">현재 피크 (상위 20%)</div>
+        <div style="font-size:28px;font-weight:900;color:#dc2626;line-height:1">18.0<span style="font-size:14px;font-weight:700">h</span></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px">목표</div>
+        <div style="font-size:20px;font-weight:900;color:#059669;line-height:1">8h<span style="font-size:10px;font-weight:600;color:#94a3b8"> 이내</span></div>
+      </div>
+    </div>
+    <div style="background:#fef9c3;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:6px">📊 응답시간 분포</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <div style="font-size:10px;color:#64748b;width:64px">2h 이내</div>
+        <div style="flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="width:47%;height:100%;background:#22c55e;border-radius:3px"></div></div>
+        <div style="font-size:10px;font-weight:700;color:#374151">47%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <div style="font-size:10px;color:#64748b;width:64px">~8h</div>
+        <div style="flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="width:17%;height:100%;background:#3b82f6;border-radius:3px"></div></div>
+        <div style="font-size:10px;font-weight:700;color:#374151">17%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <div style="font-size:10px;color:#64748b;width:64px">~24h</div>
+        <div style="flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="width:19%;height:100%;background:#f59e0b;border-radius:3px"></div></div>
+        <div style="font-size:10px;font-weight:700;color:#374151">19%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="font-size:10px;color:#64748b;width:64px">24h 초과</div>
+        <div style="flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="width:13%;height:100%;background:#ef4444;border-radius:3px"></div></div>
+        <div style="font-size:10px;font-weight:700;color:#374151">13%</div>
+      </div>
+    </div>
+    <div style="background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:10px;color:#c2410c;font-weight:600;line-height:1.5">
+      💡 중앙값 2.1h — 월요일 적체가 피크 주도<br>월요일 선제 처리 루틴 도입 권장
+    </div>
+  </div>
+
+  <!-- TASK 02 -->
+  <div style="background:white;border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-top:4px solid #ef4444;position:relative;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:10px;font-weight:900;color:white;background:#ef4444;padding:2px 8px;border-radius:20px;letter-spacing:.5px">TASK 02</span>
+      <span style="font-size:12px;font-weight:800;color:#0f172a">재문의율 감소</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px">
+      <div>
+        <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px">현재 재문의율</div>
+        <div style="font-size:28px;font-weight:900;color:#dc2626;line-height:1">35.8<span style="font-size:14px;font-weight:700">%</span></div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:2px">751명 / 2,096명</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px">목표</div>
+        <div style="font-size:20px;font-weight:900;color:#059669;line-height:1">20%<span style="font-size:10px;font-weight:600;color:#94a3b8"> 이하</span></div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1.5px solid #fee2e2;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#b91c1c;margin-bottom:8px">📈 재문의 현황 (30일 내)</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <div style="text-align:center;flex:1">
+          <div style="font-size:18px;font-weight:900;color:#ef4444">751</div>
+          <div style="font-size:9px;color:#94a3b8">재문의 고객</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:18px;font-weight:900;color:#64748b">1,345</div>
+          <div style="font-size:9px;color:#94a3b8">1회 문의 고객</div>
+        </div>
+      </div>
+      <div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;margin-top:4px">
+        <div style="width:35.8%;height:100%;background:#ef4444;border-radius:3px"></div>
+      </div>
+    </div>
+    <div style="background:#fef2f2;border-radius:8px;padding:8px 10px;font-size:10px;color:#b91c1c;font-weight:600;line-height:1.5">
+      💡 같은 고객이 30일 내 재방문<br>FAQ 개선 · 1회 완결 응답 품질 향상 필요
+    </div>
+  </div>
+
+  <!-- TASK 03 -->
+  <div style="background:white;border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-top:4px solid #7c3aed;position:relative;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:10px;font-weight:900;color:white;background:#7c3aed;padding:2px 8px;border-radius:20px;letter-spacing:.5px">TASK 03</span>
+      <span style="font-size:12px;font-weight:800;color:#0f172a">인증 퍼널 전환 개선</span>
+    </div>
+    <!-- 재안내 가능/불가 숫자 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:#d1fae5;border-radius:10px;padding:10px 12px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#065f46;margin-bottom:2px">✅ 재안내 가능</div>
+        <div style="font-size:26px;font-weight:900;color:#059669;line-height:1">255<span style="font-size:13px">건</span></div>
+        <div style="font-size:9px;color:#065f46;margin-top:2px">발신번호 158 + 사업자 97</div>
+      </div>
+      <div style="background:#fee2e2;border-radius:10px;padding:10px 12px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#991b1b;margin-bottom:2px">❌ 정책 불가</div>
+        <div style="font-size:26px;font-weight:900;color:#dc2626;line-height:1">69<span style="font-size:13px">건</span></div>
+        <div style="font-size:9px;color:#991b1b;margin-top:2px">부동산/분양·050·통신사</div>
+      </div>
+    </div>
+    <!-- 즉시 액션 TOP 3 -->
+    <div style="background:#faf5ff;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#6d28d9;margin-bottom:8px">📋 즉시 액션 TOP 3</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="width:4px;height:28px;background:#7c3aed;border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;color:#0f172a">사업자등록증 사진 재촬영 요청</div>
+          <div style="font-size:9px;color:#64748b">QR·직인 잘림 → 재제출 안내</div>
+        </div>
+        <div style="font-size:13px;font-weight:900;color:#7c3aed">67건</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="width:4px;height:28px;background:#3b82f6;border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;color:#0f172a">서류 기한 초과 → 재발급 안내</div>
+          <div style="font-size:9px;color:#64748b">통신서비스 이용증명원·재직증명서</div>
+        </div>
+        <div style="font-size:13px;font-weight:900;color:#3b82f6">62건</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:4px;height:28px;background:#f59e0b;border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;color:#0f172a">ARS 인증 재시도 안내</div>
+          <div style="font-size:9px;color:#64748b">미응답·통화 불가 고객 재접촉</div>
+        </div>
+        <div style="font-size:13px;font-weight:900;color:#f59e0b">18건</div>
+      </div>
+    </div>
+    <div style="background:#f5f3ff;border-radius:8px;padding:8px 10px;font-size:10px;color:#6d28d9;font-weight:600;line-height:1.5">
+      💡 가입→첫발송 전환율 현재 26.9% — 재안내 255건 성공 시<br>전환율 +5~10%p 추가 달성 가능 추정
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ── 월별 운영 성과 추이 ── -->
+<div style="margin-top:20px;margin-bottom:16px;">
+  <div id="monthlyTrendContainer"></div>
+</div>
+
+<!-- ── 스프린트 운영 과제 도출 매트릭스 ── -->
+<div style="margin-top:20px;margin-bottom:16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="sec-label" style="margin:0;font-size:12px;color:#0f172a;font-weight:900;letter-spacing:0;">📋 스프린트 운영 과제 도출 매트릭스</div>
+    <div id="lw-matrix-period" style="font-size:10px;color:#94a3b8;background:#f8fafc;border:1px solid #e2e8f0;padding:3px 10px;border-radius:20px;">데이터 로딩 중...</div>
+  </div>
+  <div id="ops-matrix"></div>
+</div>
+
+</div>
+
+<div class="page" id="pg-c">
+
+<!-- 월별 전환 성과 그룹형 세로 막대 차트 -->
+<div style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    <div class="sec-label" style="margin:0;font-size:12px;color:#0f172a;font-weight:900;letter-spacing:0;">📈 월별 전환 성과 추이 — 3개월 그룹형 비교</div>
+    <div style="font-size:10px;color:#94a3b8;background:#f8fafc;border:1px solid #e2e8f0;padding:3px 10px;border-radius:20px;">data.js 실측 기반</div>
+  </div>
+  <div id="conv-legend" style="display:flex;margin-bottom:10px;flex-wrap:wrap;"></div>
+  <div id="conv-monthly-chart" style="width:100%;"></div>
+  <div id="conv-gap-box" style="margin-top:12px;"></div>
+</div>
+
+<!-- 상단: 채널 × 지표 매트릭스 -->
+<div class="sec-label" style="font-size:12px;color:#0f172a;font-weight:900;letter-spacing:0;">📊 채널별 통합 전환 매트릭스 — 전주 대비 이번 주</div>
+<div id="ch-matrix" style="margin-bottom:20px;"></div>
+
+<!-- 하단: 채널별 담당자 종합 테이블 -->
+<div class="sec-label" style="font-size:12px;color:#0f172a;font-weight:900;letter-spacing:0;">🎯 채널 담당자별 종합 과제 도출</div>
+<div id="ch-detail"></div>
+
+</div>
+<div class="page" id="pg-m">
+<div class="sec-label">현재 데이터 현황</div><div class="mgmt-status-grid"><div class="status-card"><div class="sc-label">📋 CS 상담</div><div class="sc-value" style="color:#059669">4,128건</div><div class="sc-sub">로드됨</div></div><div class="status-card"><div class="sc-label">📞 발신번호 인증</div><div class="sc-value" style="color:#059669">6,102건</div><div class="sc-sub">로드됨</div></div><div class="status-card"><div class="sc-label">🏢 사업자 인증</div><div class="sc-value" style="color:#059669">1,606건</div><div class="sc-sub">로드됨</div></div></div>
+<div class="sec-label">Google Apps Script 자동 연동</div>
+<div class="card" style="margin-bottom:16px">
+  <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap">
+    <div style="flex:1;min-width:260px">
+      <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:10px">🔗 연결 구조</div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;font-size:12px;color:#475569;line-height:2">
+        구글 스프레드시트<br>
+        <span style="color:#94a3b8;margin-left:8px">↓ GAS 트리거 (매일 오전 8시)</span><br>
+        Google Drive → data.js 저장<br>
+        <span style="color:#94a3b8;margin-left:8px">↓ Drive 데스크톱 앱 자동 동기화</span><br>
+        <strong style="color:#059669">대시보드에 자동 반영 ✅</strong>
+      </div>
+      <div style="margin-top:10px;padding:10px 14px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;font-size:11px;color:#1d4ed8">
+        💡 GAS 설정은 <strong>GAS_Push_설정가이드.txt</strong> 파일을 참고하세요
+      </div>
+    </div>
+    <div style="min-width:220px">
+      <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:10px">🔄 수동 새로고침</div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:12px;line-height:1.6">
+        지금 당장 최신 데이터로 갱신하려면<br>아래 버튼을 눌러주세요.<br>
+        <span style="color:#94a3b8">(갱신 서버가 실행 중이어야 합니다)</span>
+      </div>
+      <button class="btn-save" style="margin-bottom:8px" onclick="triggerRefresh()">🔄 지금 바로 갱신</button>
+      <div style="font-size:11px;color:#94a3b8">갱신 서버: <code style="background:#f1f5f9;padding:1px 6px;border-radius:4px">localhost:7799</code></div>
+    </div>
+  </div>
+</div>
+<div class="sec-label">담당자 설정</div>
+<div class="mgmt-form-row">
+  <div class="form-card cs-top">
+    <div class="fc-title">📋 CS 상담</div>
+    <div class="form-group"><label>담당자 이름</label><input type="text" class="form-input" id="csAdminName" placeholder="이름 입력"></div>
+    <div class="form-group"><label>시트 탭 이름</label><input type="text" class="form-input" id="csSheetName" placeholder="CS상담"></div>
+    <button class="btn-save" onclick="saveCSConfig()">💾 저장</button>
+  </div>
+  <div class="form-card caller-top">
+    <div class="fc-title">📞 발신번호 인증</div>
+    <div class="form-group"><label>담당자 이름</label><input type="text" class="form-input" id="callerAdminName" placeholder="이름 입력"></div>
+    <div class="form-group"><label>시트 탭 이름</label><input type="text" class="form-input" id="callerSheetName" placeholder="인증-발신번호"></div>
+    <button class="btn-save purple" onclick="saveCallerConfig()">💾 저장</button>
+  </div>
+  <div class="form-card biz-top">
+    <div class="fc-title">🏢 사업자 인증</div>
+    <div class="form-group"><label>담당자 이름</label><input type="text" class="form-input" id="bizAdminName" placeholder="이름 입력"></div>
+    <div class="form-group"><label>시트 탭 이름</label><input type="text" class="form-input" id="bizSheetName" placeholder="인증-사업자"></div>
+    <button class="btn-save cyan" onclick="saveBizConfig()">💾 저장</button>
+  </div>
+</div>
+<div class="sec-label">채팅상담 데이터 업로드</div>
+<div class="card" style="margin-bottom:16px">
+  <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+    <div style="flex:1;min-width:260px">
+      <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:8px">💬 채팅상담 데이터 업로드</div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:12px;line-height:1.7">
+        엑셀(.xlsx) 또는 CSV 파일을 바로 업로드하세요.<br>
+        구글 스프레드시트나 엑셀 파일 그대로 올리면 돼요.
+      </div>
+      <div id="chatZone" onclick="document.getElementById('chatFile').click()" style="border:2px dashed #e2e8f0;border-radius:8px;padding:20px;text-align:center;cursor:pointer;background:#fafafa;transition:all .2s;">
+        <div style="font-size:20px;margin-bottom:4px">📂</div>
+        <div style="font-size:12px;font-weight:700;color:#334155">클릭해서 파일 선택</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:2px">.xlsx · .xls · .csv 지원</div>
+      </div>
+      <input type="file" id="chatFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadChat(this.files[0])">
+      <div id="chatResult" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-size:11px;font-weight:600;"></div>
+    </div>
+    <div style="min-width:180px">
+      <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:8px">현재 상태</div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px;font-size:12px;color:#475569;">
+        <div style="margin-bottom:6px">채팅 데이터: <strong id="chatCnt" style="color:#94a3b8">0건</strong></div>
+        <div style="font-size:11px;color:#94a3b8" id="chatFname">업로드된 파일 없음</div>
+      </div>
+      <button class="btn-save" style="margin-top:10px;background:#ef4444;" onclick="clearChat()">🗑 초기화</button>
+    </div>
+  </div>
+</div>
+<div class="sec-label">GAS URL 설정</div><div class="card"><div class="form-group" style="margin-bottom:0"><label>Apps Script URL (세 시트 공통)</label><div style="display:flex;gap:8px;margin-top:4px"><input type="text" class="form-input" id="gasUrlInput" placeholder="https://script.google.com/a/macros/..." style="flex:1"><button class="btn-save" style="width:auto;padding:8px 18px;margin:0;white-space:nowrap" onclick="saveGasUrl()">💾 저장</button></div><div style="font-size:11px;color:#94a3b8;margin-top:5px">현재: <span id="gasUrlDisplay" style="color:#2563eb;word-break:break-all"></span></div></div></div>
+</div>
+<div class="page" id="pg-j">
+
+<!-- 설정 -->
+<div style="background:white;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:16px;border:1.5px solid #e2e8f0;">
+  <div style="font-size:11px;font-weight:800;color:#0052CC;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">🔧 Jira 연결 설정</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">Jira 도메인</label>
+      <input type="text" id="j-domain" placeholder="예: alipeople.atlassian.net" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-family:inherit;outline:none;color:#0f172a;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">프로젝트 키</label>
+      <input type="text" id="j-project" placeholder="예: TF" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-family:inherit;outline:none;color:#0f172a;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">이메일</label>
+      <input type="text" id="j-email" placeholder="예: ejchoi@alipeople.kr" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-family:inherit;outline:none;color:#0f172a;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">API 토큰</label>
+      <input type="password" id="j-token" placeholder="Atlassian API Token" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-family:inherit;outline:none;color:#0f172a;" oninput="(function(v){try{if(v)localStorage.setItem('j_tok',v);}catch(e){}var s=document.getElementById('j-tok-saved');if(s)s.style.opacity=v?'1':'0';})(this.value)">
+    </div>
+  </div>
+  <div style="margin-top:10px;padding:8px 12px;background:#eff6ff;border-radius:7px;font-size:10px;color:#1d4ed8;line-height:1.6;">
+    💡 API 토큰 발급: <strong>id.atlassian.com → 보안 → API 토큰 만들기</strong>
+    <span id="j-tok-saved" style="margin-left:10px;font-size:10px;color:#059669;font-weight:700;opacity:0;transition:opacity .3s;">💾 저장됨</span>
+  </div>
+</div>
+
+<!-- 진행 현황 -->
+<div style="background:white;border-radius:12px;padding:12px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:14px;display:flex;align-items:center;gap:14px;">
+  <div style="font-size:12px;font-weight:700;color:#374151">등록 진행</div>
+  <div style="flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden;"><div style="height:100%;background:#0052CC;border-radius:4px;transition:width .4s;" id="j-prog-fill" style="width:0%"></div></div>
+  <div style="font-size:11px;font-weight:700;color:#64748b;" id="j-prog-text">0 / 3</div>
+</div>
+
+<!-- 에픽 -->
+<div style="background:white;border-radius:12px;padding:14px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border-left:4px solid #6554C0;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:9px;font-weight:800;background:#6554C0;color:white;padding:2px 7px;border-radius:10px;letter-spacing:.4px;">EPIC</span>
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#0f172a;">운영 스프린트 — 2026 Q2</div>
+      <div style="font-size:10px;color:#64748b;margin-top:2px;">3개 태스크 · 재안내 / 응답지연 / 재문의</div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+    <button id="j-btn-epic" onclick="jRegisterEpic()" style="padding:7px 16px;background:#0052CC;color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">에픽 등록</button>
+    <div id="j-epic-result" style="font-size:10px;"></div>
+  </div>
+</div>
+
+<!-- TASK 01 -->
+<div style="background:white;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px;border-top:4px solid #f59e0b;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:7px;">
+      <span style="font-size:9px;font-weight:800;background:#1d4ed8;color:white;padding:2px 7px;border-radius:10px;">TASK 01</span>
+      <span style="font-size:9px;font-weight:700;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:10px;">KPI: 재안내</span>
+      <span style="font-size:9px;font-weight:700;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:10px;">담당: 미정</span>
+      <span id="j-st-01" style="font-size:9px;font-weight:700;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:10px;">미등록</span>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="jPreview(1)" style="padding:7px 14px;background:white;color:#0052CC;border:1.5px solid #0052CC;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">미리보기</button>
+      <button id="j-btn-01" onclick="jRegisterTask(1)" style="padding:7px 16px;background:#0052CC;color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">등록하기</button>
+    </div>
+  </div>
+  <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:3px;" id="j-story-title-01">인증 거절 사유별 재안내 문자 작성·발송</div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.5;" id="j-story-desc-01">사유별 표준 재안내 문자 템플릿 작성 후 대상 397건에 발송</div>
+  <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5;">
+    📊 <b>진단:</b> 재안내 가능한 인증 거절·반려 397건, 거절 사유가 7~8개 유형에 집중
+  </div>
+  <div style="display:flex;flex-direction:column;gap:5px;padding-top:10px;border-top:1.5px dashed #e2e8f0;" id="j-story-subs-01">
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 통신서비스 이용증명원 관련 거절(팩스 미수신·발급 1개월 경과) 재안내 문자 템플릿 작성</span><span id="j-sub-01-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 이용증명원 사유 거절 27건으로 단일 사유 중 최다, 표준 문구로 재신청 안내 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 사업자등록증·증명 위변조 QR·세무서장 직인 미확인 거절 재안내 문자 템플릿 작성</span><span id="j-sub-01-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: QR·직인 사유 거절 34건, 서류 재발급 방법이 동일해 1개 템플릿으로 커버 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 주민번호 마스킹 누락·재직증명서 미비 거절 재안내 문자 템플릿 작성</span><span id="j-sub-01-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 마스킹·재직증명서 사유 16건, 보완 기준이 명확해 표준화 용이</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">④ 작성한 사유별 템플릿을 대상 397건에 매칭해 재안내 문자 발송</span><span id="j-sub-01-4" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재안내 가능 397건 전체가 표준 문자 발송으로 재신청 전환 유도 가능</div></div>
+  </div>
+  <div id="j-result-01" style="margin-top:6px;font-size:10px;"></div>
+</div>
+
+<!-- TASK 02 -->
+<div style="background:white;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px;border-top:4px solid #ef4444;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:7px;">
+      <span style="font-size:9px;font-weight:800;background:#1d4ed8;color:white;padding:2px 7px;border-radius:10px;">TASK 02</span>
+      <span style="font-size:9px;font-weight:700;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:10px;">KPI: 응답지연</span>
+      <span style="font-size:9px;font-weight:700;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:10px;">담당: 미정</span>
+      <span id="j-st-02" style="font-size:9px;font-weight:700;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:10px;">미등록</span>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="jPreview(2)" style="padding:7px 14px;background:white;color:#0052CC;border:1.5px solid #0052CC;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">미리보기</button>
+      <button id="j-btn-02" onclick="jRegisterTask(2)" style="padding:7px 16px;background:#0052CC;color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">등록하기</button>
+    </div>
+  </div>
+  <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:3px;" id="j-story-title-02">응답 지연 반복 유발 유형 표준 답변 구축</div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.5;" id="j-story-desc-02">반복 지연 유형 표준 답변 문안 작성 및 응답 가이드 문서화</div>
+  <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5;">
+    📊 <b>진단:</b> 24시간 초과 응답 1,512건 중 1,305건(86%)이 스마트문자 문의에 집중 · 피크 응답 25.6h
+  </div>
+  <div style="display:flex;flex-direction:column;gap:5px;padding-top:10px;border-top:1.5px dashed #e2e8f0;" id="j-story-subs-02">
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 24시간 초과 응답 1위 스마트문자 문의의 세부 질문 유형 추출</span><span id="j-sub-02-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 초과 1,512건 중 1,305건(86%)이 이 유형, 세분화 시 표준화 대상 도출 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 추출된 스마트문자 반복 질문에 대한 표준 답변 문안 작성</span><span id="j-sub-02-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 동일 질문 반복으로 표준 답변 1세트가 다수 문의에 재사용 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 엑셀파일 등록대행·환불문의 지연 유형 표준 답변 템플릿 작성</span><span id="j-sub-02-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 각각 73건·59건 초과 발생, 절차 안내형이라 템플릿화 적합</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">④ 작성한 표준 답변을 답변 도구에서 바로 호출하도록 응답 가이드 문서로 정리</span><span id="j-sub-02-4" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 초과 응답 86% 집중 유형의 답변을 도구에서 즉시 불러오도록 문서화 필요</div></div>
+  </div>
+  <div id="j-result-02" style="margin-top:6px;font-size:10px;"></div>
+</div>
+
+<!-- TASK 03 -->
+<div style="background:white;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px;border-top:4px solid #059669;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:7px;">
+      <span style="font-size:9px;font-weight:800;background:#1d4ed8;color:white;padding:2px 7px;border-radius:10px;">TASK 03</span>
+      <span style="font-size:9px;font-weight:700;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:10px;">KPI: 재문의</span>
+      <span style="font-size:9px;font-weight:700;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:10px;">담당: 미정</span>
+      <span id="j-st-03" style="font-size:9px;font-weight:700;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:10px;">미등록</span>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="jPreview(3)" style="padding:7px 14px;background:white;color:#0052CC;border:1.5px solid #0052CC;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">미리보기</button>
+      <button id="j-btn-03" onclick="jRegisterTask(3)" style="padding:7px 16px;background:#0052CC;color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">등록하기</button>
+    </div>
+  </div>
+  <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:3px;" id="j-story-title-03">재문의 Top 유형 1회 완결 스크립트 작성</div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.5;" id="j-story-desc-03">후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 및 FAQ 반영</div>
+  <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5;">
+    📊 <b>진단:</b> 30일 내 재문의 사용자 1,115명(38.8%), 재문의도 스마트문자 문의에 집중
+  </div>
+  <div style="display:flex;flex-direction:column;gap:5px;padding-top:10px;border-top:1.5px dashed #e2e8f0;" id="j-story-subs-03">
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 재문의 사용자 문의 중 1회로 끝나지 않은 스마트문자 문의 미완결 패턴 분석</span><span id="j-sub-03-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 사용자 문의 중 스마트문자가 최다, 미완결 패턴이 스크립트 기초</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 자주 누락되는 후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성</span><span id="j-sub-03-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의율 38.8%(1,115/2,876), 선제 안내로 2차 문의 유발 요소 제거 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 엑셀파일 등록대행·이메일 문의 재문의 유형 완결 스크립트 작성</span><span id="j-sub-03-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 사용자 문의 411건·244건 발생, 절차 누락이 재문의 원인</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">④ 작성한 완결 스크립트를 FAQ·표준 답변에 반영하는 업데이트안 정리</span><span id="j-sub-03-4" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 Top 유형을 1회 답변에 통합해 재문의 감소 근거 확보</div></div>
+  </div>
+  <div id="j-result-03" style="margin-top:6px;font-size:10px;"></div>
+</div>
+
+<!-- Jira 미리보기 모달 -->
+<div id="j-preview-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);align-items:center;justify-content:center;" onclick="if(event.target===this)jPreviewClose()">
+  <div style="background:white;border-radius:14px;width:560px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <!-- 모달 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:white;z-index:1;border-radius:14px 14px 0 0;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="#0052CC" xmlns="http://www.w3.org/2000/svg"><path d="M16 2C8.27 2 2 8.27 2 16s6.27 14 14 14 14-6.27 14-14S23.73 2 16 2zm6.55 16.16l-7.27 7.27a1.1 1.1 0 01-1.56-1.56l5.72-5.87-5.72-5.87a1.1 1.1 0 011.56-1.56l7.27 7.27a1.1 1.1 0 010 1.32z"/></svg>
+        <span style="font-size:12px;font-weight:700;color:#0052CC;">TF — 운영팀 업무 고도화 보드</span>
+        <span style="font-size:11px;color:#94a3b8;">등록 미리보기</span>
+      </div>
+      <button onclick="jPreviewClose()" style="background:none;border:none;cursor:pointer;color:#64748b;font-size:18px;line-height:1;padding:0 4px;" title="닫기">✕</button>
+    </div>
+    <!-- 모달 내용 -->
+    <div id="j-preview-content"></div>
+    <!-- 모달 푸터 -->
+    <div style="padding:14px 20px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:white;border-radius:0 0 14px 14px;">
+      <button onclick="jPreviewClose()" style="padding:8px 18px;background:white;color:#475569;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">닫기</button>
+      <button id="j-preview-reg-btn" style="padding:8px 18px;background:#0052CC;color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">이 내용으로 Jira 등록</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+var GAS_URL = "https://script.google.com/a/macros/alipeople.kr/s/AKfycbzxW4_uDliJgHApFEdch6JHFelnT61oS74MYpU2oYxfFAcslfwv4l9ngYt5ZdDpDUKqvQ/exec";
+function go(id){
+  document.getElementById("tb-s").className="tab-btn"+(id==="s"?" on":"");
+  document.getElementById("tb-c").className="tab-btn"+(id==="c"?" on":"");
+  document.getElementById("tb-m").className="tab-btn"+(id==="m"?" on":"");
+  document.getElementById("pg-s").style.display=id==="s"?"block":"none";
+  document.getElementById("pg-c").style.display=id==="c"?"block":"none";
+  document.getElementById("pg-m").style.display=id==="m"?"block":"none";
+}
+function toast(msg,type){var t=document.getElementById("toast");t.textContent=msg;t.className="toast "+(type||"ok");t.style.opacity=1;setTimeout(function(){t.style.opacity=0;},2500);}
+
+function parseCSV(text) {
+  var lines = text.split('\n').filter(function(l){return l.trim();});
+  if (lines.length < 2) throw new Error('데이터가 없습니다');
+  function splitLine(line) {
+    var res=[],cur='',inQ=false;
+    for(var i=0;i<line.length;i++){var c=line[i];if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){res.push(cur.trim());cur='';}else{cur+=c;}}
+    res.push(cur.trim());
+    return res;
+  }
+  var headers = splitLine(lines[0]);
+  var rows = [];
+  for (var i=1;i<lines.length;i++) {
+    var vals = splitLine(lines[i]);
+    var obj = {};
+    headers.forEach(function(h,j){obj[h]=vals[j]||'';});
+    rows.push(obj);
+  }
+  return rows;
+}
+function saveChatRows(rows, fname) {
+  localStorage.setItem('op_chat_data', JSON.stringify(rows));
+  localStorage.setItem('op_chat_file', fname);
+  updateChatStatus();
+  var r = document.getElementById('chatResult');
+  r.style.display='block'; r.style.background='#d1fae5'; r.style.color='#065f46';
+  r.textContent = '✅ ' + rows.length.toLocaleString() + '건 업로드 완료: ' + fname;
+}
+async function readXlsx(buffer) {
+  var u8 = new Uint8Array(buffer);
+  var dv = new DataView(buffer);
+  function u16(o){return dv.getUint16(o,true);}
+  function u32(o){return dv.getUint32(o,true);}
+
+  // End of Central Directory 탐색
+  var eocd = -1;
+  for (var i = u8.length - 22; i >= Math.max(0, u8.length - 65558); i--) {
+    if (u8[i]===0x50&&u8[i+1]===0x4B&&u8[i+2]===0x05&&u8[i+3]===0x06) { eocd=i; break; }
+  }
+  if (eocd < 0) throw new Error('ZIP 형식이 아닙니다 (xlsx 파일인지 확인해주세요)');
+
+  var cdOffset = u32(eocd + 16);
+  var cdSize   = u32(eocd + 12);
+
+  // 중앙 디렉토리로 파일 목록 구축
+  var files = {};
+  var pos = cdOffset;
+  while (pos < cdOffset + cdSize && pos + 46 <= u8.length) {
+    if (u8[pos]!==0x50||u8[pos+1]!==0x4B||u8[pos+2]!==0x01||u8[pos+3]!==0x02) break;
+    var method   = u16(pos + 10);
+    var compSz   = u32(pos + 20);
+    var fnLen    = u16(pos + 28);
+    var exLen    = u16(pos + 30);
+    var cmLen    = u16(pos + 32);
+    var localOff = u32(pos + 42);
+    var fname    = new TextDecoder().decode(u8.slice(pos+46, pos+46+fnLen));
+    files[fname] = { method:method, compSz:compSz, localOff:localOff };
+    pos += 46 + fnLen + exLen + cmLen;
+  }
+
+  async function extract(name) {
+    var e = files[name];
+    if (!e) return null;
+    var lo = e.localOff;
+    var fnLen2 = u16(lo + 26), exLen2 = u16(lo + 28);
+    var dataStart = lo + 30 + fnLen2 + exLen2;
+    var data = u8.slice(dataStart, dataStart + e.compSz);
+    if (e.method === 0) return new TextDecoder('utf-8').decode(data);
+    if (e.method === 8) {
+      var ds = new DecompressionStream('deflate-raw');
+      var w = ds.writable.getWriter(); w.write(data); w.close();
+      var rd = ds.readable.getReader(), chunks = [];
+      while(true){var r=await rd.read();if(r.done)break;chunks.push(r.value);}
+      var tot = chunks.reduce(function(s,c){return s+c.length;},0);
+      var out = new Uint8Array(tot), off2 = 0;
+      chunks.forEach(function(c){out.set(c,off2);off2+=c.length;});
+      return new TextDecoder('utf-8').decode(out);
+    }
+    throw new Error('지원하지 않는 압축 방식');
+  }
+
+  var parser = new DOMParser();
+
+  // sharedStrings (공유 문자열 테이블)
+  var ssXml = await extract('xl/sharedStrings.xml');
+  var ss = [];
+  if (ssXml) {
+    var ssDoc = parser.parseFromString(ssXml, 'application/xml');
+    ssDoc.querySelectorAll('si').forEach(function(si) {
+      var t = Array.from(si.querySelectorAll('t')).map(function(el){return el.textContent;}).join('');
+      ss.push(t);
+    });
+  }
+
+  // 첫 번째 시트 XML
+  var wsXml = await extract('xl/worksheets/sheet1.xml');
+  if (!wsXml) {
+    // sheet 이름이 다를 경우 workbook.xml 에서 확인
+    var wbXml = await extract('xl/workbook.xml');
+    if (wbXml) {
+      var wbDoc = parser.parseFromString(wbXml, 'application/xml');
+      var firstSheet = wbDoc.querySelector('sheet');
+      if (firstSheet) {
+        var rId = firstSheet.getAttribute('r:id') || firstSheet.getAttribute('id');
+        var relsXml = await extract('xl/_rels/workbook.xml.rels');
+        if (relsXml) {
+          var rDoc = parser.parseFromString(relsXml, 'application/xml');
+          var rel = Array.from(rDoc.querySelectorAll('Relationship')).find(function(r){return r.getAttribute('Id')===rId;});
+          if (rel) wsXml = await extract('xl/' + rel.getAttribute('Target').replace(/^\.?\//,''));
+        }
+      }
+    }
+  }
+  if (!wsXml) throw new Error('시트 데이터를 찾을 수 없습니다');
+
+  // DOMParser 로 안정적으로 파싱
+  var wsDoc = parser.parseFromString(wsXml, 'application/xml');
+
+  function colIdx(s){return s.split('').reduce(function(n,c){return n*26+c.charCodeAt(0)-64;},0);}
+  function colLet(n){var s='';while(n>0){s=String.fromCharCode(64+(n-1)%26+1)+s;n=Math.floor((n-1)/26);}return s;}
+
+  var headers = null, rows = [];
+  wsDoc.querySelectorAll('row').forEach(function(rowEl) {
+    var cells = {}, maxI = 0;
+    rowEl.querySelectorAll('c').forEach(function(c) {
+      var r = c.getAttribute('r');
+      if (!r) return;
+      var col = r.replace(/[0-9]/g,'');
+      var t   = c.getAttribute('t');
+      var vEl = c.querySelector('v');
+      var isEl = c.querySelector('is > t');
+      var val = '';
+      if (t === 's' && vEl) {
+        val = ss[parseInt(vEl.textContent)] || '';
+      } else if (t === 'inlineStr' && isEl) {
+        val = isEl.textContent;
+      } else if (vEl) {
+        val = vEl.textContent || '';
+      }
+      cells[col] = val;
+      var ci = colIdx(col);
+      if (ci > maxI) maxI = ci;
+    });
+    if (!maxI) return;
+    var arr = [];
+    for (var ci = 1; ci <= maxI; ci++) arr.push(cells[colLet(ci)] || '');
+    if (!headers) { headers = arr; }
+    else {
+      var obj = {};
+      headers.forEach(function(h, i){ obj[h] = arr[i] || ''; });
+      rows.push(obj);
+    }
+  });
+
+  return rows;
+}
+function uploadChat(file) {
+  if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  var r = document.getElementById('chatResult');
+  r.style.display='block'; r.style.background='#e0f2fe'; r.style.color='#0369a1';
+  r.textContent = '⏳ 파일 읽는 중...';
+  if (ext === 'xlsx' || ext === 'xls') {
+    var rd = new FileReader();
+    rd.onload = function(e) {
+      readXlsx(e.target.result).then(function(rows){
+        if (!rows.length) {
+          r.style.background='#fff1f2'; r.style.color='#9f1239';
+          r.textContent='❌ 데이터가 없습니다. 첫 번째 시트를 확인해주세요.';
+          return;
+        }
+        saveChatRows(rows, file.name);
+      }).catch(function(err){
+        r.style.background='#fff1f2'; r.style.color='#9f1239';
+        r.textContent='❌ 오류: '+err.message;
+      });
+    };
+    rd.readAsArrayBuffer(file);
+  } else {
+    var rd2 = new FileReader();
+    rd2.onload = function(e) {
+      try {
+        var rows = parseCSV(e.target.result);
+        saveChatRows(rows, file.name);
+      } catch(err) {
+        r.style.display='block'; r.style.background='#fff1f2'; r.style.color='#9f1239';
+        r.textContent = '❌ 오류: ' + err.message;
+      }
+    };
+    rd2.readAsText(file, 'UTF-8');
+  }
+}
+function clearChat() {
+  if (!confirm('채팅 데이터를 초기화할까요?')) return;
+  localStorage.removeItem('op_chat_data');
+  localStorage.removeItem('op_chat_file');
+  updateChatStatus();
+  toast('🗑 채팅 데이터 초기화됨', 'warn');
+}
+function updateChatStatus() {
+  var saved = localStorage.getItem('op_chat_data');
+  var fname = localStorage.getItem('op_chat_file') || '';
+  var cntEl = document.getElementById('chatCnt');
+  var fnEl  = document.getElementById('chatFname');
+  if (!cntEl) return;
+  if (saved) {
+    try {
+      var d=JSON.parse(saved);
+      cntEl.textContent=d.length.toLocaleString()+'건'; cntEl.style.color='#059669';
+      fnEl.textContent=fname||'업로드됨';
+    } catch(e){}
+  } else {
+    cntEl.textContent='0건'; cntEl.style.color='#94a3b8';
+    fnEl.textContent='업로드된 파일 없음';
+  }
+}
+
+function syncInputs(){var ls=localStorage;document.getElementById("csSheetName").value=ls.getItem("op_sheet_cs")||"CS상담";document.getElementById("csAdminName").value=ls.getItem("op_admin_cs")||"";document.getElementById("callerSheetName").value=ls.getItem("op_sheet_caller")||"인증-발신번호";document.getElementById("callerAdminName").value=ls.getItem("op_admin_caller")||"";document.getElementById("bizSheetName").value=ls.getItem("op_sheet_biz")||"인증-사업자";document.getElementById("bizAdminName").value=ls.getItem("op_admin_biz")||"";var u=ls.getItem("op_gas_url")||GAS_URL;document.getElementById("gasUrlInput").value=u;document.getElementById("gasUrlDisplay").textContent=u;}
+function saveCSConfig(){var a=document.getElementById("csAdminName").value.trim(),s=document.getElementById("csSheetName").value.trim()||"CS상담";if(a)localStorage.setItem("op_admin_cs",a);localStorage.setItem("op_sheet_cs",s);toast("💾 CS 담당자 저장됨","ok");}
+function saveCallerConfig(){var a=document.getElementById("callerAdminName").value.trim(),s=document.getElementById("callerSheetName").value.trim()||"인증-발신번호";if(a)localStorage.setItem("op_admin_caller",a);localStorage.setItem("op_sheet_caller",s);toast("💾 발신번호 담당자 저장됨","ok");}
+function saveBizConfig(){var a=document.getElementById("bizAdminName").value.trim(),s=document.getElementById("bizSheetName").value.trim()||"인증-사업자";if(a)localStorage.setItem("op_admin_biz",a);localStorage.setItem("op_sheet_biz",s);toast("💾 사업자 담당자 저장됨","ok");}
+function saveGasUrl(){var u=document.getElementById("gasUrlInput").value.trim();if(!u){toast("URL을 입력해주세요","warn");return;}localStorage.setItem("op_gas_url",u);document.getElementById("gasUrlDisplay").textContent=u;toast("💾 GAS URL 저장됨","ok");}
+function triggerRefresh(){window.open('http://localhost:7799/update','_blank');toast('✅ 새 탭에서 갱신 중... 30초 후 완료돼요','ok');}
+
+// ── 전환 성과: 12주 누적 데이터 ──
+var convData = [{"name": "김상현", "total": 317, "charge": 24.9, "chargeN": 79, "caller": 8.2, "callerN": 26, "send": 3.8, "sendN": 12, "biz": 1.9, "bizN": 6}, {"name": "권남형", "total": 169, "charge": 15.4, "chargeN": 26, "caller": 5.9, "callerN": 10, "send": 0.6, "sendN": 1, "biz": 3.0, "bizN": 5}, {"name": "정예령", "total": 79, "charge": 21.5, "chargeN": 17, "caller": 5.1, "callerN": 4, "send": 7.6, "sendN": 6, "biz": 1.3, "bizN": 1}, {"name": "최은진", "total": 62, "charge": 12.9, "chargeN": 8, "caller": 0.0, "callerN": 0, "send": 0.0, "sendN": 0, "biz": 1.6, "bizN": 1}];
+
+// ══════════════════════════════════════════════════
+//  전환 성과: 채널 × 지표 통합 매트릭스
+//  ※ 매주 cur 값만 갱신
+// ══════════════════════════════════════════════════
+
+// 담당자별 [12주 평균(b12) / 이번 주(cur)] — 지표: charge, send, biz
+// ── 담당자 → 채널 매핑 ──
+var AGENT_CH = {
+  '정예령': 'board',
+  '권남형': 'chat',
+  '최은진': 'chat',
+  '김상현': 'auth'
+};
+var agentPerf = []; // data.js fetch 후 채워짐
+
+var channelMeta = [
+  {id:'board', name:'게시판 채널',     emoji:'📋', color:'#2563eb'},
+  {id:'chat',  name:'실시간 채팅 채널', emoji:'💬', color:'#7c3aed'},
+  {id:'auth',  name:'인증 검수 채널',  emoji:'🔐', color:'#0891b2'}
+];
+var metricMeta = [
+  {key:'charge', label:'충전 전환율',    action:'첫충전 안내 매크로 교정 코칭'},
+  {key:'send',   label:'첫 발송 전환율', action:'발송 유도 스크립트 교정 코칭'},
+  {key:'biz',    label:'사업자 인증률',  action:'사업자 인증 안내 스크립트 점검'}
+];
+
+// ── data.js 파싱 (JSON 잘린 파일도 안전하게) ──
+function parseDataRecords(text) {
+  var csIdx = text.indexOf('cs:');
+  if (csIdx < 0) return [];
+  var arrStart = text.indexOf('[', csIdx);
+  if (arrStart < 0) return [];
+  var records = [];
+  var i = arrStart + 1, len = text.length;
+  while (i < len) {
+    while (i < len && text[i] !== '{') i++;
+    if (i >= len) break;
+    var depth = 0, inStr = false, esc = false, j = i;
+    while (j < len) {
+      var c = text[j];
+      if (esc) { esc = false; }
+      else if (c === '\\' && inStr) { esc = true; }
+      else if (c === '"') { inStr = !inStr; }
+      else if (!inStr) {
+        if (c === '{') depth++;
+        else if (c === '}') {
+          depth--;
+          if (depth === 0) {
+            try {
+              var obj = JSON.parse(text.slice(i, j + 1));
+              if (obj['답변자'] && obj['문의 일시']) records.push(obj);
+            } catch(e) {}
+            i = j + 1;
+            break;
+          }
+        }
+      }
+      j++;
+    }
+    if (j >= len) break;
+  }
+  return records;
+}
+
+// ── 기간별 전환 지표 계산 ──
+function calcMetrics(records, startDate, endDate) {
+  var stats = {};
+  Object.keys(AGENT_CH).forEach(function(name) {
+    stats[name] = {total:0, charge:0, send:0, biz:0};
+  });
+  records.forEach(function(r) {
+    var agent = (r['답변자'] || '').split(' /')[0].trim();
+    if (!stats[agent]) return;
+    var inqD = (r['문의 일시'] || '').slice(0, 10);
+    if (startDate && inqD < startDate) return;
+    if (endDate   && inqD > endDate)   return;
+    stats[agent].total++;
+    var chargeD = (r['첫 충전일시']       || '').slice(0, 10);
+    var sendD   = (r['첫 발송 일시']      || '').slice(0, 10);
+    var bizD    = (r['사업자 인증 일시']   || '').slice(0, 10);
+    if (chargeD && chargeD !== '-' && chargeD >= inqD) stats[agent].charge++;
+    if (sendD   && sendD   !== '-' && sendD   >= inqD) stats[agent].send++;
+    if (bizD    && bizD    !== '-' && bizD    >= inqD) stats[agent].biz++;
+  });
+  return stats;
+}
+
+// ── agentPerf 빌드 ──
+function buildAgentPerf(b12S, lwS) {
+  return Object.keys(AGENT_CH).map(function(name) {
+    var b = b12S[name] || {total:1,charge:0,send:0,biz:0};
+    var c = lwS[name]  || {total:0,charge:0,send:0,biz:0};
+    var bt = b.total || 1;
+    var ct = c.total || 1;
+    function pct(n, d) { return Math.round(n / d * 1000) / 10; }
+    return {
+      name: name, ch: AGENT_CH[name], total: c.total,
+      charge: {b12: pct(b.charge,bt), cur: c.total>0 ? pct(c.charge,ct) : null},
+      send:   {b12: pct(b.send,bt),   cur: c.total>0 ? pct(c.send,ct)   : null},
+      biz:    {b12: pct(b.biz,bt),    cur: c.total>0 ? pct(c.biz,ct)    : null}
+    };
+  });
+}
+
+// ── 저번주 날짜 계산 ──
+function getLastWeekRange() {
+  var today = new Date();
+  var dow = today.getDay() || 7; // Mon=1 … Sun=7
+  var mon = new Date(today); mon.setDate(today.getDate() - dow - 6);
+  var sun = new Date(mon);   sun.setDate(mon.getDate() + 6);
+  function fmt(d) { return d.toISOString().slice(0, 10); }
+  return {start: fmt(mon), end: fmt(sun)};
+}
+
+// ── data.js fetch & 전환 분석 초기화 ──
+function initConvData() {
+  var mEl = document.getElementById('ch-matrix');
+  if (mEl) mEl.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">⏳ 계산 중...</div>';
+
+  try {
+    var records = (window._PRELOADED && window._PRELOADED.cs) ? window._PRELOADED.cs : [];
+    if (records.length === 0) throw new Error('data.js 미로드');
+
+    var lw = getLastWeekRange();
+    // 전주 날짜 계산 (lw 기준 7일 전)
+    function addDaysLocal(dateStr, days) {
+      var d = new Date(dateStr); d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+    var pw = { start: addDaysLocal(lw.start, -7), end: addDaysLocal(lw.end, -7) };
+
+    var prevStats = calcMetrics(records, pw.start, pw.end);  // 전주 데이터
+    var lwStats   = calcMetrics(records, lw.start, lw.end);
+
+    agentPerf = buildAgentPerf(prevStats, lwStats);  // 전주 대비 비교
+
+    // ── 전주 비교 KPI 카드 업데이트 ──
+    updateKPIBadges(records, lw);
+
+    // 기간 라벨 업데이트
+    var lwLabel = document.getElementById('lw-period-label');
+    if (lwLabel) lwLabel.textContent = lw.start + ' ~ ' + lw.end + ' (전체 ' + records.length + '건 기준)';
+
+    renderConvAnalysis();
+    render3StepDashboard();
+
+    // 매트릭스 기간 라벨 동기화
+    var mLabel = document.getElementById('lw-matrix-period');
+    if (mLabel) mLabel.textContent = lw.start + ' ~ ' + lw.end;
+  } catch(err) {
+    console.error('전환 데이터 오류:', err);
+    if (mEl) mEl.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">⚠️ 데이터 로드 실패 — data.js가 같은 폴더에 있는지 확인하세요</div>';
+  }
+}
+
+// ── 전주 비교 & KPI 카드 배지 업데이트 ──
+function updateKPIBadges(records, lw) {
+  // 전주 날짜 범위 계산 (기준주 lw 기준 7일 전)
+  function addDays(dateStr, days) {
+    var d = new Date(dateStr); d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+  var pw = { start: addDays(lw.start, -7), end: addDays(lw.end, -7) };
+
+  // 기준주(이번주/저번주) 집계
+  var cur  = {total:0, charge:0, caller:0, send:0, biz:0};
+  // 전주 집계 (비교 대상)
+  var prev = {total:0, charge:0, caller:0, send:0, biz:0};
+
+  records.forEach(function(r) {
+    var inqD = (r['문의 일시'] || '').slice(0, 10);
+    if (!inqD) return;
+
+    function countConv(bucket) {
+      bucket.total++;
+      var chargeD = (r['첫 충전일시']        || '').slice(0, 10);
+      var callerD = (r['발신번호 인증 일시']  || '').slice(0, 10);
+      var sendD   = (r['첫 발송 일시']        || '').slice(0, 10);
+      var bizD    = (r['사업자 인증 일시']     || '').slice(0, 10);
+      if (chargeD && chargeD !== '-' && chargeD >= inqD) bucket.charge++;
+      if (callerD && callerD !== '-' && callerD >= inqD) bucket.caller++;
+      if (sendD   && sendD   !== '-' && sendD   >= inqD) bucket.send++;
+      if (bizD    && bizD    !== '-' && bizD    >= inqD) bucket.biz++;
+    }
+
+    // 기준주 집계
+    if (lw && inqD >= lw.start && inqD <= lw.end) countConv(cur);
+    // 전주 집계
+    if (inqD >= pw.start && inqD <= pw.end) countConv(prev);
+  });
+
+  // 12주 평균 계산 (전환 성과 배지 + 전문가 진단 공용)
+  var avg12 = {total:0, charge:0, caller:0, send:0, biz:0};
+  var w12start = addDays(lw.start, -84);
+  var w12end   = addDays(lw.start, -1);
+  records.forEach(function(r) {
+    var inqD12 = (r['문의 일시'] || '').slice(0, 10);
+    if (!inqD12 || inqD12 < w12start || inqD12 > w12end) return;
+    avg12.total++;
+    var chargeD = (r['첫 충전일시']        || '').slice(0, 10);
+    var callerD = (r['발신번호 인증 일시']  || '').slice(0, 10);
+    var sendD   = (r['첫 발송 일시']        || '').slice(0, 10);
+    var bizD    = (r['사업자 인증 일시']     || '').slice(0, 10);
+    if (chargeD && chargeD !== '-' && chargeD >= inqD12) avg12.charge++;
+    if (callerD && callerD !== '-' && callerD >= inqD12) avg12.caller++;
+    if (sendD   && sendD   !== '-' && sendD   >= inqD12) avg12.send++;
+    if (bizD    && bizD    !== '-' && bizD    >= inqD12) avg12.biz++;
+  });
+
+  function p(n, d) { return d > 0 ? Math.round(n / d * 1000) / 10 : 0; }
+
+  var prevT  = prev.total  || 1;
+  var avg12T = avg12.total || 1;
+
+  // 기준값: 12주 평균 / 배지: 전주 vs 12주 평균 비교
+  var metrics = [
+    {key:'charge', avg: p(avg12.charge, avg12T), prev: p(prev.charge, prevT), avgN: avg12.charge},
+    {key:'caller', avg: p(avg12.caller, avg12T), prev: p(prev.caller, prevT), avgN: avg12.caller},
+    {key:'send',   avg: p(avg12.send,   avg12T), prev: p(prev.send,   prevT), avgN: avg12.send},
+    {key:'biz',    avg: p(avg12.biz,    avg12T), prev: p(prev.biz,    prevT), avgN: avg12.biz}
+  ];
+
+  metrics.forEach(function(m) {
+    var kvEl  = document.getElementById('kv-' + m.key);
+    var ksEl  = document.getElementById('ks-' + m.key);
+    var bdgEl = document.getElementById('kpi-badge-' + m.key);
+
+    if (avg12.total > 0 && kvEl) kvEl.textContent = m.avg;
+    if (avg12.total > 0 && ksEl) ksEl.textContent = m.avgN + '건 전환 / ' + avg12.total + '건 (12주)';
+
+    if (bdgEl) {
+      var gap = Math.round((m.prev - m.avg) * 10) / 10;
+      var gapStr = gap >= 0 ? '▲+' + gap + '%p' : '▼' + Math.abs(gap) + '%p';
+      bdgEl.textContent = '전주 ' + m.prev + '% ' + gapStr;
+    }
+  });
+
+  // 기간 배지 업데이트 (기준주 · 비교: 전주)
+  var periodBadge = document.getElementById('badge-period-0');
+  if (periodBadge && lw) {
+    function fmtD(d) { return d.slice(5).replace('-', '/'); }
+    var curPeriod  = fmtD(lw.start) + '~' + fmtD(lw.end);
+    var prevPeriod = fmtD(pw.start) + '~' + fmtD(pw.end);
+    var prevPeriod = fmtD(pw.start) + '~' + fmtD(pw.end);
+    periodBadge.textContent = '📅 12주 평균 기준 | 전주 ' + prevPeriod + ' 대비';
+  }
+
+  // ── 운영 현황 지표 → 전주 기준 실제 데이터 업데이트 ──
+  (function() {
+    function fmtS(d) { return d.slice(5).replace('-', '/'); }
+    var periodStr = fmtS(lw.start) + '~' + fmtS(lw.end);
+
+    // 전주 레코드 필터
+    var lwRecs = records.filter(function(r) {
+      var d = (r['문의 일시'] || '').slice(0, 10);
+      return d >= lw.start && d <= lw.end;
+    });
+    var lwTotal = lwRecs.length;
+
+    // 응답 완료율 (답변완료 / 전체)
+    var lwDone = lwRecs.filter(function(r) { return r['답변 상태'] === '답변완료'; }).length;
+    var lwRate = lwTotal > 0 ? Math.round(lwDone / lwTotal * 1000) / 10 : 0;
+    var rateGrade = lwRate >= 95 ? '양호' : lwRate >= 85 ? '보통' : '주의';
+
+    // 미처리 (답변대기중 + 답변중 + 중간답변)
+    var lwUnhandled = lwRecs.filter(function(r) {
+      var s = r['답변 상태'] || '';
+      return s === '답변대기중' || s === '답변중' || s === '중간답변';
+    }).length;
+
+    // 평균 응답 시간 (답변완료 건만)
+    var rts = lwRecs
+      .filter(function(r) { return r['답변 상태'] === '답변완료' && r['답변 일시']; })
+      .map(function(r) { return (new Date(r['답변 일시']) - new Date(r['문의 일시'])) / 3600000; })
+      .filter(function(h) { return h >= 0 && h < 240; });
+    var avgH = rts.length ? Math.round(rts.reduce(function(a, b) { return a + b; }, 0) / rts.length * 10) / 10 : 0;
+    var rtGrade = avgH <= 12 ? '빠름' : avgH <= 24 ? '보통' : '느림';
+
+    // DOM 업데이트
+    var bp1 = document.getElementById('badge-period-1');
+    if (bp1) bp1.textContent = '전주 ' + periodStr;
+
+    var kvWt = document.getElementById('kv-weekly-total');
+    if (kvWt) kvWt.textContent = lwTotal.toLocaleString();
+    var ksWt = document.getElementById('ks-weekly-total');
+    if (ksWt) ksWt.textContent = periodStr + ' 기준';
+
+    var kvRr = document.getElementById('kv-response-rate');
+    if (kvRr) kvRr.textContent = lwRate;
+    var bdgRr = document.getElementById('badge-response-rate');
+    if (bdgRr) bdgRr.textContent = rateGrade;
+
+    var kvArt = document.getElementById('kv-avg-rt');
+    if (kvArt) kvArt.textContent = avgH;
+    var ksArt = document.getElementById('ks-avg-rt');
+    if (ksArt) ksArt.textContent = '중앙값 · 완료 ' + rts.length + '건 기준';
+
+    var kvUh = document.getElementById('kv-unhandled');
+    if (kvUh) kvUh.textContent = lwUnhandled;
+    var ksUh = document.getElementById('ks-unhandled');
+    if (ksUh) ksUh.textContent = '전주 ' + periodStr + ' 기준';
+
+    var lbl = document.getElementById('donut-label');
+    if (lbl) lbl.textContent = '완료 ' + lwDone.toLocaleString() + '건 / 미처리 ' + lwUnhandled + '건';
+  })();
+
+  // 주별 추이 (최근 8주) — 진단 카드 스파크라인용
+  var weeklyTrends = { charge:[], caller:[], send:[], biz:[], resp:[] };
+  for (var wi = 7; wi >= 0; wi--) {
+    var wsTr = addDays(lw.start, -(wi * 7));
+    var weTr = addDays(lw.end,   -(wi * 7));
+    var wt = 0, wd = 0, wc = { charge:0, caller:0, send:0, biz:0 };
+    records.forEach(function(r) {
+      var id = (r['문의 일시'] || '').slice(0, 10);
+      if (!id || id < wsTr || id > weTr) return;
+      wt++;
+      if ((r['답변 상태'] || '') === '답변완료') wd++;
+      var cD  = (r['첫 충전일시']        || '').slice(0, 10);
+      var caD = (r['발신번호 인증 일시']  || '').slice(0, 10);
+      var sD  = (r['첫 발송 일시']        || '').slice(0, 10);
+      var bD  = (r['사업자 인증 일시']    || '').slice(0, 10);
+      if (cD  && cD  !== '-' && cD  >= id) wc.charge++;
+      if (caD && caD !== '-' && caD >= id) wc.caller++;
+      if (sD  && sD  !== '-' && sD  >= id) wc.send++;
+      if (bD  && bD  !== '-' && bD  >= id) wc.biz++;
+    });
+    var t  = wt || 1;
+    var lb = wsTr.slice(5).replace('-', '/');
+    weeklyTrends.charge.push({ lb: lb, v: Math.round(wc.charge / t * 1000) / 10 });
+    weeklyTrends.caller.push({ lb: lb, v: Math.round(wc.caller / t * 1000) / 10 });
+    weeklyTrends.send.push({   lb: lb, v: Math.round(wc.send   / t * 1000) / 10 });
+    weeklyTrends.biz.push({    lb: lb, v: Math.round(wc.biz    / t * 1000) / 10 });
+    weeklyTrends.resp.push({   lb: lb, v: wt > 5 ? Math.round(wd / t * 1000) / 10 : 0 });
+  }
+
+  // 전문가 진단 렌더링 (12주 평균 기준 — avg12는 위에서 계산됨)
+  renderExpertAnalysis(cur, avg12, lw, pw, weeklyTrends);
+}
+
+// ── AI 운영 전문가 진단 ──
+function renderExpertAnalysis(cur, avg12, lw, pw, weeklyTrends) {
+  var el = document.getElementById('expert-analysis');
+  if (!el) return;
+
+  function p(n, d) { return d > 0 ? Math.round(n / d * 1000) / 10 : 0; }
+  function fmt(d) { return d.slice(5).replace('-', '/'); }
+  var curT = cur.total || 1, avgT = avg12.total || 1;
+
+  // 스파크라인 SVG 생성 (작은 카드용 + 마우스오버 팝업 포함)
+  function makeSpark(data, accentC, avgVal, cardTitle) {
+    if (!data || !data.length) return '';
+    var maxV = Math.max.apply(null, data.map(function(d){ return d.v; }).concat([avgVal || 0])) * 1.2 || 1;
+    var n = data.length, gap = 4;
+
+    // SVG 막대 생성 (공용)
+    function renderBars(W, H, bw, fSm, fLg, showAll) {
+      return data.map(function(d, i) {
+        var bh = Math.max(3, Math.round(d.v / maxV * H));
+        var x  = i * (bw + gap);
+        var isLast = (i === n - 1);
+        var fill   = isLast ? accentC : (d.v < avgVal * 0.75 ? '#fca5a5' : '#cbd5e1');
+        var lbl    = '';
+        if (isLast) {
+          lbl = '<text x="'+(x+bw/2)+'" y="'+(H-bh-6)+'" text-anchor="middle" font-size="'+fLg+'" font-weight="900" fill="'+accentC+'">'+d.v+'%</text>';
+        } else if (showAll || i >= n - 3) {
+          lbl = '<text x="'+(x+bw/2)+'" y="'+(H-bh-4)+'" text-anchor="middle" font-size="'+fSm+'" fill="#64748b">'+d.v+'</text>';
+        }
+        return '<rect x="'+x+'" y="'+(H-bh)+'" width="'+bw+'" height="'+bh+'" fill="'+fill+'" rx="3"/>'+lbl;
+      }).join('');
+    }
+    function renderAvg(W, H, fs) {
+      if (!avgVal) return '';
+      var ay = H - Math.round(avgVal / maxV * H);
+      return '<line x1="0" y1="'+ay+'" x2="'+W+'" y2="'+ay+'" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>'
+        +'<rect x="0" y="'+(ay-11)+'" width="66" height="13" rx="3" fill="#fef9c3"/>'
+        +'<text x="3" y="'+(ay-1)+'" font-size="'+fs+'" font-weight="700" fill="#b45309">평균 '+avgVal+'%</text>';
+    }
+    function renderXLabels(bw, H, fs, allIdx) {
+      var idx = allIdx ? data.map(function(_,i){ return i; }) : [0, Math.floor(n/2), n-1];
+      return idx.map(function(i) {
+        var x = i * (bw + gap) + bw / 2;
+        var isL = (i === n - 1);
+        return '<text x="'+x+'" y="'+(H+14)+'" text-anchor="middle" font-size="'+fs+'" font-weight="'+(isL?'700':'400')+'" fill="'+(isL?'#334155':'#94a3b8')+'">'+data[i].lb+'</text>';
+      }).join('');
+    }
+
+    // ① 작은 스파크라인 (카드 내)
+    var W = 260, H = 70, bw = Math.floor((W - gap*(n-1))/n);
+    var smallSvg = '<svg viewBox="0 0 '+W+' '+(H+16)+'" style="width:100%;height:86px;margin-top:10px;">'
+      + renderBars(W, H, bw, 8.5, 11, false)
+      + renderAvg(W, H, 9)
+      + renderXLabels(bw, H, 9, false)
+      + '</svg>';
+
+    // ② 큰 차트 (마우스오버 팝업용)
+    var TW = 340, TH = 140, tbw = Math.floor((TW - gap*(n-1))/n);
+    var largeSvg = '<svg viewBox="0 0 '+TW+' '+(TH+18)+'" style="width:100%;height:158px;">'
+      + renderBars(TW, TH, tbw, 10, 12, true)
+      + renderAvg(TW, TH, 10)
+      + renderXLabels(tbw, TH, 9.5, true)
+      + '</svg>';
+
+    // 주차별 수치 테이블
+    var tableRows = data.map(function(d, i) {
+      var isLast = (i === n - 1);
+      var bg = isLast ? '#f8faff' : '';
+      var fw = isLast ? '700' : '400';
+      var vc = isLast ? accentC : (d.v < avgVal * 0.75 ? '#dc2626' : '#374151');
+      return '<tr style="background:'+bg+';">'
+        +'<td style="padding:3px 8px;font-size:10px;color:#64748b;font-weight:'+fw+';">'+d.lb+(isLast?' (전주)':'')+'</td>'
+        +'<td style="padding:3px 8px;font-size:10px;font-weight:'+(isLast?'900':fw)+';color:'+vc+';text-align:right;">'+d.v+'%</td>'
+        +'<td style="padding:3px 8px;font-size:10px;color:'+(d.v>=avgVal?'#059669':'#dc2626')+';text-align:right;">'+(avgVal>0?(d.v>=avgVal?'▲':'▼')+Math.abs(Math.round((d.v-avgVal)*10)/10)+'%p':'')+'</td>'
+        +'</tr>';
+    }).join('');
+
+    var tipDiv = '<div class="spark-tip" style="display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 10px);z-index:300;background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.18);width:380px;pointer-events:none;">'
+      +'<div style="font-size:13px;font-weight:900;color:#0f172a;margin-bottom:10px;">📊 '+(cardTitle||'전환율')+' 8주 추이</div>'
+      + largeSvg
+      +'<div style="margin-top:10px;border-top:1px solid #f1f5f9;padding-top:8px;">'
+      +'<table style="width:100%;border-collapse:collapse;">'
+      +'<thead><tr>'
+      +'<th style="padding:3px 8px;font-size:10px;color:#94a3b8;font-weight:600;text-align:left;">주차</th>'
+      +'<th style="padding:3px 8px;font-size:10px;color:#94a3b8;font-weight:600;text-align:right;">전환율</th>'
+      +'<th style="padding:3px 8px;font-size:10px;color:#94a3b8;font-weight:600;text-align:right;">vs 12주평균</th>'
+      +'</tr></thead>'
+      +'<tbody>'+tableRows+'</tbody>'
+      +'</table>'
+      +(avgVal>0?'<div style="margin-top:6px;font-size:10px;color:#b45309;font-weight:700;">― 12주 평균: '+avgVal+'%</div>':'')
+      +'</div>'
+      +'</div>';
+
+    return '<div style="position:relative;" onmouseenter="this.querySelector(\'.spark-tip\').style.display=\'block\'" onmouseleave="this.querySelector(\'.spark-tip\').style.display=\'none\'">'
+      + smallSvg + tipDiv
+      + '</div>';
+  }
+
+  var kpis = [
+    { label:'충전 전환율',   key:'charge', cur: p(cur.charge, curT), avg: p(avg12.charge, avgT) },
+    { label:'발신번호 인증', key:'caller', cur: p(cur.caller, curT), avg: p(avg12.caller, avgT) },
+    { label:'첫 발송 전환', key:'send',   cur: p(cur.send,   curT), avg: p(avg12.send,   avgT) },
+    { label:'사업자 인증',  key:'biz',    cur: p(cur.biz,    curT), avg: p(avg12.biz,    avgT) }
+  ];
+
+  // 점수 계산 (12주 평균 대비 ratio 기반 연속 점수)
+  var totalScore = 0;
+  kpis.forEach(function(m) {
+    m.gap = Math.round((m.cur - m.avg) * 10) / 10;
+    var ratio = m.avg > 0 ? Math.min(1, m.cur / m.avg) : 1;
+    m.score = Math.round(ratio * 25);
+    totalScore += m.score;
+    if (ratio >= 0.92)      { m.status = 'good';  m.statusLabel = '양호'; m.sC = '#059669'; m.sBg = '#d1fae5'; }
+    else if (ratio >= 0.75) { m.status = 'watch'; m.statusLabel = '주의'; m.sC = '#d97706'; m.sBg = '#fef3c7'; }
+    else                     { m.status = 'bad';   m.statusLabel = '위험'; m.sC = '#dc2626'; m.sBg = '#fee2e2'; }
+  });
+
+  var sorted  = kpis.slice().sort(function(a,b){ return a.gap - b.gap; });
+  var worst   = sorted[0];
+  var best    = sorted[sorted.length-1];
+  var badList = kpis.filter(function(m){ return m.status==='bad'; });
+  var wchList = kpis.filter(function(m){ return m.status==='watch'; });
+
+  var grade, gradeC, gradeChip;
+  if      (totalScore >= 82) { grade='양호';    gradeC='#059669'; gradeChip='#d1fae5'; }
+  else if (totalScore >= 58) { grade='주의 필요'; gradeC='#d97706'; gradeChip='#fef3c7'; }
+  else                        { grade='위험';    gradeC='#dc2626'; gradeChip='#fee2e2'; }
+
+  // ── 3개 진단 카드 ──
+  var diagCards = [];
+
+  // ① 위험/주의 카드 (가장 나쁜 지표)
+  if (badList.length > 0) {
+    var w = badList.slice().sort(function(a,b){ return a.gap-b.gap; })[0];
+    diagCards.push({ type:'위험', tC:'#dc2626', tBg:'#fef2f2', key: w.key, avgVal: w.avg,
+      title: w.label + ' 급락',
+      lines: [w.cur + '% — 12주 평균(' + w.avg + '%) 대비 ▼' + Math.abs(w.gap) + '%p',
+              '즉각적인 원인 파악 필요'] });
+  } else if (wchList.length > 0) {
+    var ww = wchList[0];
+    diagCards.push({ type:'주의', tC:'#d97706', tBg:'#fffbeb', key: ww.key, avgVal: ww.avg,
+      title: ww.label + ' 소폭 하락',
+      lines: [ww.cur + '% — 12주 평균(' + ww.avg + '%) 대비 ▼' + Math.abs(ww.gap) + '%p',
+              '지속 모니터링 권고'] });
+  }
+
+  // ② 관찰 카드
+  if (badList.length >= 2) {
+    var w2 = badList.slice().sort(function(a,b){ return a.gap-b.gap; })[1];
+    diagCards.push({ type:'관찰', tC:'#d97706', tBg:'#fef3c7', key: w2.key, avgVal: w2.avg,
+      title: w2.label + ' 하락세',
+      lines: [w2.cur + '% — 12주 평균(' + w2.avg + '%) 대비 ▼' + Math.abs(w2.gap) + '%p',
+              '2주 연속 하락 여부 점검'] });
+  } else {
+    diagCards.push({ type:'관찰', tC:'#d97706', tBg:'#fef3c7', key: 'resp', avgVal: 0,
+      title: '미처리 건수 누적',
+      lines: ['미전환 건 반복 문의 발생', '승인취소/환불 집중 처리 필요'] });
+  }
+
+  // ③ 양호 카드
+  if (best.gap >= 0 || best.status === 'good') {
+    var gS = best.gap >= 0 ? '▲+' + best.gap + '%p' : '12주 평균 수준 유지';
+    diagCards.push({ type:'양호', tC:'#059669', tBg:'#f0fdf4', key: best.key, avgVal: best.avg,
+      title: best.label + ' 안정적',
+      lines: [best.cur + '% (' + gS + ')', '12주 평균 대비 유지·개선'] });
+  } else {
+    diagCards.push({ type:'양호', tC:'#059669', tBg:'#f0fdf4', key: 'resp', avgVal: 0,
+      title: '응답률 안정적',
+      lines: ['상담 완료율 정상 범위', '12주 평균 응답 속도 이상'] });
+  }
+
+  // ── 전문가 코멘트 ──
+  var comment;
+  if (badList.length >= 3) {
+    comment = '이번 주 ' + worst.label + '(' + worst.cur + '%)은 12주 평균(' + worst.avg + '%) 대비 ▼' + Math.abs(worst.gap) + '%p 급락하는 등 <strong>전 지표가 동반 하락</strong>했습니다. '
+      + '상담 유입 특성 변화 또는 응대 품질 저하를 즉각 점검하고, 미전환 고객의 이탈 패턴을 분석해야 합니다.';
+  } else if (badList.length >= 1) {
+    var bd = badList[0];
+    var others = kpis.filter(function(m){ return m !== bd && m.gap < 0; });
+    comment = '이번 주 <strong>' + bd.label + '(' + bd.cur + '%)</strong>은 12주 평균(' + bd.avg + '%) 대비 ▼' + Math.abs(bd.gap) + '%p 하락했습니다.'
+      + (others.length > 0 ? ' ' + others.map(function(m){ return m.label + '(' + m.cur + '%)'; }).join(', ') + '도 소폭 하락하고 있어 <strong>상담 품질 또는 유입 고객 특성 변화</strong>를 점검할 필요가 있습니다.' : '')
+      + ' 12주 평균 대비 추이와 함께 원인을 파악하세요.';
+  } else if (wchList.length >= 1) {
+    comment = '전반적으로 안정적이나 <strong>' + wchList.map(function(m){ return m.label; }).join(', ') + '</strong>이 12주 평균 대비 소폭 하락 중입니다. 원인을 파악하고 다음 주 회복 여부를 모니터링하세요.';
+  } else {
+    comment = '이번 주 <strong>전 지표가 12주 평균 대비 유지 또는 개선</strong>됐습니다. 특히 ' + best.label + '(' + best.cur + '%)이 ▲+' + best.gap + '%p 상승하며 긍정적 흐름을 보입니다. 이 기조를 다음 주에도 이어가는 것이 관건입니다.';
+  }
+
+  // ── HTML 조립 ──
+  var secHdr = '<div style="font-size:11px;font-weight:900;color:#7c3aed;margin-bottom:10px;">🤖 AI 운영 전문가 진단</div>';
+
+  // 카드 1: 종합 진단 (스파크라인 포함)
+  var diagHtml = diagCards.map(function(d) {
+    var sparkData = (weeklyTrends && d.key && weeklyTrends[d.key]) ? weeklyTrends[d.key] : null;
+    var sparkSvg = sparkData ? makeSpark(sparkData, d.tC, d.avgVal, d.title) : '';
+    return '<div style="flex:1;background:' + d.tBg + ';border-radius:8px;padding:11px 13px;min-width:0;">'
+      + '<div style="font-size:10px;font-weight:800;color:' + d.tC + ';margin-bottom:5px;">' + d.type + '</div>'
+      + '<div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:4px;">' + d.title + '</div>'
+      + d.lines.map(function(l){ return '<div style="font-size:11px;color:#374151;line-height:1.5;">' + l + '</div>'; }).join('')
+      + sparkSvg
+      + '</div>';
+  }).join('');
+
+  // 툴팁: 지표별 점수 산정 근거
+  var tipRows = kpis.map(function(m) {
+    return '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:11px;">'
+      + '<span style="color:#475569;">' + m.label + '</span>'
+      + '<span>전주 <b>' + m.cur + '%</b> / 12주 평균 ' + m.avg + '% → <b style="color:' + gradeC + ';">' + m.score + '점</b>/25점</span>'
+      + '</div>';
+  }).join('');
+  var tipHtml = '<div style="font-size:11px;font-weight:800;color:#0f172a;margin-bottom:8px;">📊 점수 산정 근거</div>'
+    + tipRows
+    + '<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:6px;border-top:2px solid #e2e8f0;font-size:12px;">'
+    + '<span style="font-weight:700;color:#374151;">합계</span>'
+    + '<span style="font-weight:900;color:' + gradeC + ';">' + totalScore + ' / 100점 → ' + grade + '</span>'
+    + '</div>'
+    + '<div style="margin-top:6px;font-size:10px;color:#94a3b8;">82↑ 양호 &nbsp;·&nbsp; 58↑ 주의 필요 &nbsp;·&nbsp; 58↓ 위험</div>';
+
+  var card1 = '<div class="card" style="margin-bottom:10px;">'
+    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">'
+    + '<div><div style="font-size:12px;font-weight:800;color:#0f172a;">이번 주 운영 종합 진단</div>'
+    + '<div style="font-size:11px;color:#64748b;margin-top:3px;">기준: ' + fmt(lw.start) + '~' + fmt(lw.end) + ' · 12주 평균 대비 | 평균 상담 ' + Math.round(avg12.total/12) + '건/주</div></div>'
+    + '<div style="position:relative;text-align:center;cursor:help;"'
+    + ' onmouseenter="this.querySelector(\'.score-tip\').style.display=\'block\'"'
+    + ' onmouseleave="this.querySelector(\'.score-tip\').style.display=\'none\'">'
+    + '<div style="font-size:28px;font-weight:900;color:' + gradeC + ';line-height:1;">' + totalScore + '</div>'
+    + '<div style="font-size:10px;font-weight:700;color:' + gradeC + ';background:' + gradeChip + ';padding:2px 9px;border-radius:20px;margin-top:4px;">' + grade + '</div>'
+    + '<div class="score-tip" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:310px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:13px 15px;box-shadow:0 6px 20px rgba(0,0,0,.13);z-index:99;text-align:left;">'
+    + tipHtml + '</div>'
+    + '</div></div>'
+    + '<div style="display:flex;gap:8px;">' + diagHtml + '</div>'
+    + '</div>';
+
+  // 카드 2: 전문가 코멘트
+  var card2 = '<div class="card">'
+    + '<div style="font-size:11px;font-weight:800;color:#1e293b;margin-bottom:10px;">✦ 전문가 분석 코멘트</div>'
+    + '<div style="border-left:3px solid #7c3aed;padding:10px 14px;background:#faf5ff;border-radius:0 8px 8px 0;font-size:12px;color:#1e293b;line-height:1.8;">'
+    + comment + '</div></div>';
+
+  el.innerHTML = secHdr + card1 + card2;
+}
+
+function wAvg(members, key) {
+  var n = members.reduce(function(s,m){return s+m.total;},0)||1;
+  return Math.round(members.reduce(function(s,m){return s+((m[key].cur||0)*m.total);},0)/n*10)/10;
+}
+function wAvgB(members, key) {
+  var n = members.reduce(function(s,m){return s+m.total;},0)||1;
+  return Math.round(members.reduce(function(s,m){return s+m[key].b12*m.total;},0)/n*10)/10;
+}
+
+function renderConvAnalysis() {
+  // ── 매트릭스 ──
+  var mEl = document.getElementById('ch-matrix');
+  if (mEl) {
+    var mHtml = '<div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      +'<thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">'
+      +'<th style="padding:10px 16px;text-align:left;color:#64748b;font-weight:700;width:160px;">채널</th>';
+    metricMeta.forEach(function(m){
+      mHtml += '<th style="padding:10px 20px;text-align:center;color:#64748b;font-weight:700;">'+m.label+'</th>';
+    });
+    mHtml += '</tr></thead><tbody>';
+
+    channelMeta.forEach(function(ch, ri) {
+      var members = agentPerf.filter(function(a){return a.ch===ch.id;});
+      var hasData = members.some(function(m){return m.total>0;});
+      mHtml += '<tr style="border-bottom:1px solid #f1f5f9;background:'+(ri%2===0?'white':'#fafafa')+';">'
+        +'<td style="padding:12px 16px;">'
+        +'<div style="display:flex;align-items:center;gap:7px;">'
+        +'<span style="width:3px;height:28px;background:'+ch.color+';border-radius:2px;display:inline-block;flex-shrink:0;"></span>'
+        +'<div><div style="font-size:11px;font-weight:800;color:#0f172a;">'+ch.emoji+' '+ch.name+'</div>'
+        +'<div style="font-size:10px;color:#94a3b8;margin-top:1px;">'+members.map(function(m){return m.name;}).join(', ')+'</div>'
+        +'</div></div></td>';
+
+      metricMeta.forEach(function(m) {
+        if (!hasData) {
+          mHtml += '<td style="padding:12px 20px;text-align:center;color:#94a3b8;font-size:11px;">저번주 미담당</td>';
+          return;
+        }
+        var cur = wAvg(members, m.key);
+        var b12 = wAvgB(members, m.key);
+        var gap = Math.round((cur-b12)*10)/10;
+        var isOk = gap >= 0;
+        var gapClr = isOk ? '#2563eb' : '#dc2626';
+        var gapBg  = isOk ? '#eff6ff' : '#fff1f2';
+        mHtml += '<td style="padding:12px 20px;text-align:center;">'
+          +'<div style="font-size:16px;font-weight:900;color:#0f172a;line-height:1;">'+cur+'<span style="font-size:10px;font-weight:600;color:#94a3b8;">%</span></div>'
+          +'<div style="margin-top:4px;">'
+          +'<span style="font-size:10px;font-weight:700;color:'+gapClr+';background:'+gapBg+';padding:2px 7px;border-radius:20px;">'+(gap>=0?'▲+':'▼')+Math.abs(gap)+'%p</span>'
+          +'</div>'
+          +'<div style="font-size:9px;color:#94a3b8;margin-top:2px;">전주 avg '+b12+'%</div>'
+          +'</td>';
+      });
+      mHtml += '</tr>';
+    });
+    mHtml += '</tbody></table></div>';
+    mEl.innerHTML = mHtml;
+  }
+
+  // ── 담당자별 종합 테이블 ──
+  var dEl = document.getElementById('ch-detail');
+  if (!dEl) return;
+  var dHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">';
+
+  channelMeta.forEach(function(ch) {
+    var members = agentPerf.filter(function(a){return a.ch===ch.id;})
+      .slice().sort(function(a,b){
+        var worstA = Math.min.apply(null, metricMeta.map(function(m){return (a[m.key].cur||0) - a[m.key].b12;}));
+        var worstB = Math.min.apply(null, metricMeta.map(function(m){return (b[m.key].cur||0) - b[m.key].b12;}));
+        return worstA - worstB;
+      });
+
+    dHtml += '<div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);">'
+      +'<div style="background:'+ch.color+';padding:8px 14px;">'
+      +'<span style="font-size:12px;font-weight:800;color:white;">'+ch.emoji+' '+ch.name+'</span>'
+      +'</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      +'<thead><tr style="background:#f8fafc;border-bottom:1.5px solid #e2e8f0;">'
+      +'<th style="padding:7px 10px;text-align:left;color:#64748b;font-weight:700;">담당자</th>';
+    metricMeta.forEach(function(m){
+      dHtml += '<th style="padding:7px 8px;text-align:center;color:#64748b;font-weight:700;font-size:10px;">'+m.label.replace(' 전환율','').replace('률','율')+'</th>';
+    });
+    dHtml += '<th style="padding:7px 10px;text-align:left;color:#64748b;font-weight:700;">스프린트 액션</th>'
+      +'</tr></thead><tbody>';
+
+    members.forEach(function(a, i) {
+      var noData = a.total === 0;
+      if (noData) {
+        dHtml += '<tr style="background:#fafafa;border-bottom:1px solid #f1f5f9;">'
+          +'<td style="padding:9px 10px;font-weight:800;color:#94a3b8;">'+a.name+'</td>'
+          +'<td colspan="4" style="padding:9px 10px;color:#94a3b8;font-size:10px;">저번주 담당 문의 없음</td></tr>';
+        return;
+      }
+      var gaps = metricMeta.map(function(m){
+        return {label:m.label, action:m.action, gap: Math.round(((a[m.key].cur||0)-a[m.key].b12)*10)/10};
+      });
+      var worst = gaps.slice().sort(function(x,y){return x.gap-y.gap;})[0];
+      var hasNusu = worst.gap < 0;
+
+      dHtml += '<tr style="border-bottom:1px solid #f1f5f9;background:'+(i===0&&hasNusu?'#fffbfb':i%2===0?'white':'#fafafa')+';">'
+        +'<td style="padding:9px 10px;font-weight:800;color:#0f172a;">'+(i===0&&hasNusu?'🔴 ':'')+a.name+'</td>';
+
+      metricMeta.forEach(function(m) {
+        var cur = a[m.key].cur;
+        var g = Math.round(((cur||0)-a[m.key].b12)*10)/10;
+        var ok = g >= 0;
+        dHtml += '<td style="padding:7px 8px;text-align:center;">'
+          +'<div style="font-size:12px;font-weight:800;color:#0f172a;">'+(cur!==null?cur:'—')+'%</div>'
+          +'<div style="font-size:10px;font-weight:700;color:'+(ok?'#2563eb':'#dc2626')+';">'+(ok?'▲+':'▼')+Math.abs(g)+'%p</div>'
+          +'</td>';
+      });
+
+      var actionHtml = hasNusu
+        ? '<span style="color:#dc2626;font-weight:700;font-size:10px;">❌ '+worst.label+' <b>'+Math.abs(worst.gap)+'%p</b> 하락</span>'
+          +'<br><span style="color:#475569;font-size:9px;">➡ '+worst.action+'</span>'
+        : '<span style="color:#059669;font-weight:700;font-size:10px;">✅ 전 구간 유지/개선</span>'
+          +'<br><span style="color:#475569;font-size:9px;">→ 성공 패턴 팀 내 공유</span>';
+
+      dHtml += '<td style="padding:9px 10px;line-height:1.5;">'+actionHtml+'</td></tr>';
+    });
+
+    dHtml += '</tbody></table></div>';
+  });
+
+  dHtml += '</div>';
+  dEl.innerHTML = dHtml;
+}
+
+
+function renderMonthlyTrendSection() {
+  var el = document.getElementById('monthlyTrendContainer');
+  if (!el) return;
+
+  var monthlyData = {
+    months: ['4월', '5월', '6월'],
+    responseTime: [820, 852, 1080],
+    conversion:   [26.5, 26.3, 21.5]
+  };
+
+  function makeBar(month, numVal, unit, maxVal, isRed) {
+    var pct = Math.round((numVal / maxVal) * 100);
+    var barColor = isRed ? '#fca5a5' : '#cbd5e1';
+    var textColor = isRed ? '#991b1b' : '#334155';
+    return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">'
+      + '<div style="width:36px;font-size:12px;color:#64748b;font-weight:600;">' + month + '</div>'
+      + '<div style="flex:1;background:#f1f5f9;height:24px;border-radius:4px;overflow:hidden;position:relative;">'
+      + '<div style="width:' + pct + '%;background:' + barColor + ';height:100%;"></div>'
+      + '<span style="position:absolute;left:8px;top:3px;font-size:11px;font-weight:700;color:' + textColor + ';">' + numVal + unit + '</span>'
+      + '</div></div>';
+  }
+
+  var rtMax = Math.max.apply(null, monthlyData.responseTime);
+  var convMax = 30;
+
+  var rtBars = monthlyData.months.map(function(m,i){
+    return makeBar(m, monthlyData.responseTime[i], '분', rtMax, i===2);
+  }).join('');
+  var convBars = monthlyData.months.map(function(m,i){
+    return makeBar(m, monthlyData.conversion[i], '%', convMax, i===2);
+  }).join('');
+
+  el.innerHTML = '<div style="padding:20px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.04);">'
+    + '<div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:18px;">📈 최근 3개월 월별 운영 성과 추이 비교</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">'
+
+    + '<div>'
+    + '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">⏱️ 월평균 응답 시간 (분)</div>'
+    + rtBars
+    + '<div style="margin-top:8px;font-size:11px;color:#991b1b;background:#fff1f2;padding:6px 10px;border-radius:4px;border:1px solid #fca5a5;">'
+    + '⚠️ <b>진단:</b> 4·5월 대비 6월 응대 지연폭 급증 (전월 대비 +228분)'
+    + '</div></div>'
+
+    + '<div>'
+    + '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">💳 월평균 충전 전환율 (%)</div>'
+    + convBars
+    + '<div style="margin-top:8px;font-size:11px;color:#991b1b;background:#fff1f2;padding:6px 10px;border-radius:4px;border:1px solid #fca5a5;">'
+    + '⚠️ <b>진단:</b> 6월 충전 정착 전환율 하락 추세 (전월 대비 −4.8%p)'
+    + '</div></div>'
+
+    + '</div></div>';
+}
+
+function render3StepDashboard() {
+  var el = document.getElementById('ops-matrix');
+  if (!el) return;
+
+  /* ── 3개 과제 카드 데이터 ── */
+  var TASKS = [
+    {
+      num:'01', kpi:'재안내', title:'인증 거절 사유별 재안내 문자 작성·발송', owner:'미정',
+      action:'사유별 표준 재안내 문자 템플릿 작성 후 대상 397건에 발송',
+      진단:'재안내 가능한 인증 거절·반려 397건, 거절 사유가 7~8개 유형에 집중',
+      steps:[
+        '템플릿  이용증명원 관련 거절(팩스 미수신·발급 1개월 경과) 재안내 문자 작성 — 사유 27건',
+        '템플릿  사업자등록증·증명 QR·직인 미확인 거절 재안내 문자 작성 — 사유 34건',
+        '발송  사유별 템플릿을 대상 397건에 매칭해 재안내 문자 발송'
+      ],
+      요청:'별도 승인 불필요 — 운영팀 내 작성·발송 가능'
+    },
+    {
+      num:'02', kpi:'응답지연', title:'응답 지연 반복 유발 유형 표준 답변 구축', owner:'미정',
+      action:'반복 지연 유형 표준 답변 문안 작성 및 응답 가이드 문서화',
+      진단:'24시간 초과 응답 1,512건 중 1,305건(86%)이 스마트문자 문의에 집중',
+      steps:[
+        '추출  24시간 초과 1위 스마트문자 문의의 세부 질문 유형 추출',
+        '작성  반복 질문 표준 답변 문안 + 엑셀·환불 지연 유형 템플릿 작성',
+        '문서화  표준 답변을 답변 도구에서 호출하도록 응답 가이드 정리'
+      ],
+      요청:'별도 승인 불필요 — 운영팀 내 작성·문서화 가능'
+    },
+    {
+      num:'03', kpi:'재문의', title:'재문의 Top 유형 1회 완결 스크립트 작성', owner:'미정',
+      action:'후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 및 FAQ 반영',
+      진단:'30일 내 재문의 사용자 1,115명(38.8%), 재문의도 스마트문자 문의에 집중',
+      steps:[
+        '분석  재문의 사용자 스마트문자 문의 미완결 패턴 분석',
+        '작성  후속 질문 선제 안내 1회 완결 스크립트 + 엑셀·이메일 유형 작성',
+        '반영  완결 스크립트를 FAQ·표준 답변에 반영하는 업데이트안 정리'
+      ],
+      요청:'별도 승인 불필요 — 운영팀 내 작성·반영 가능'
+    }
+  ];
+
+  function insightBox(t) {
+    var stepLines = t.steps.map(function(s){
+      var parts = s.split(/\s{2,}/);
+      var time = parts[0], desc = parts.slice(1).join(' ');
+      return '<div style="display:flex;gap:7px;align-items:baseline;margin-bottom:4px;">'
+        + '<span style="font-size:10px;font-weight:800;color:#1d4ed8;white-space:nowrap;'
+        + 'background:#dbeafe;border-radius:3px;padding:0 5px;line-height:1.7;flex-shrink:0;">' + time + '</span>'
+        + '<span style="font-size:11px;color:#1e293b;line-height:1.5;">' + desc + '</span>'
+        + '</div>';
+    }).join('');
+
+    return '<div style="margin-top:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:11px 13px;">'
+      + '<div style="font-size:10px;font-weight:800;color:#b45309;margin-bottom:9px;letter-spacing:.3px;">💡 의사결정 요약</div>'
+      + '<div style="display:flex;gap:6px;align-items:baseline;margin-bottom:6px;">'
+      +   '<span style="font-size:10px;font-weight:800;color:#92400e;white-space:nowrap;background:#fef3c7;border-radius:3px;padding:0 5px;line-height:1.7;flex-shrink:0;">진단</span>'
+      +   '<span style="font-size:11px;color:#1e293b;line-height:1.5;">' + t.진단 + '</span>'
+      + '</div>'
+      + '<div style="margin-bottom:6px;">'
+      +   '<span style="font-size:10px;font-weight:800;color:#92400e;background:#fef3c7;border-radius:3px;padding:0 5px;line-height:1.7;display:inline-block;margin-bottom:5px;">실무</span>'
+      +   '<div style="padding-left:2px;">' + stepLines + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;align-items:baseline;border-top:1px solid #fde68a;padding-top:7px;margin-top:4px;">'
+      +   '<span style="font-size:10px;font-weight:800;color:#92400e;white-space:nowrap;background:#fef3c7;border-radius:3px;padding:0 5px;line-height:1.7;flex-shrink:0;">요청</span>'
+      +   '<span style="font-size:11px;color:#dc2626;line-height:1.5;font-weight:700;">' + t.요청 + '</span>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function card(t) {
+    return '<div style="background:white;border:2px solid #1d4ed8;border-radius:10px;padding:16px 18px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
+      +   '<div style="width:26px;height:26px;border-radius:50%;background:#1d4ed8;color:white;'
+      +   'display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;">' + t.num + '</div>'
+      +   '<div style="flex:1;">'
+      +     '<div style="font-size:13px;font-weight:800;color:#0f172a;line-height:1.3;">' + t.title + '</div>'
+      +     '<div style="font-size:10px;color:#64748b;margin-top:2px;">담당: <b style="color:#1d4ed8;">' + t.owner + '</b> &nbsp;·&nbsp; 지표: ' + t.kpi + '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:#334155;line-height:1.6;padding:9px 11px;background:#f0f7ff;border-radius:6px;font-weight:600;">'
+      +   t.action
+      + '</div>'
+      + insightBox(t)
+      + '</div>';
+  }
+
+  var grid = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    + TASKS.map(card).join('')
+    + '</div>';
+
+  el.innerHTML = grid;
+}
+
+function renderConvTable() {
+  var tb = document.getElementById('convTable');
+  if (!tb) return;
+  var maxC = Math.max.apply(null, convData.map(function(d){return d.charge;}));
+  var rows = '';
+  convData.forEach(function(d, i) {
+    var bg = i%2===0?'white':'#fafafa';
+    function bar(pct, color, n) {
+      return '<div style="display:flex;align-items:center;gap:6px">'
+        +'<div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+color+';border-radius:4px"></div></div>'
+        +'<span style="font-size:11px;font-weight:700;color:#1e293b;width:52px">'+pct+'% <span style="color:#94a3b8;font-weight:400">('+n+')</span></span>'
+        +'</div>';
+    }
+    rows += '<tr style="background:'+bg+';border-bottom:1px solid #f1f5f9">'
+      +'<td style="padding:10px 12px;font-weight:700;color:#0f172a">'+d.name+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:#64748b">'+d.total.toLocaleString()+'건</td>'
+      +'<td style="padding:8px 16px">'+bar(d.charge,'#059669',d.chargeN)+'</td>'
+      +'<td style="padding:8px 16px">'+bar(d.caller,'#7c3aed',d.callerN)+'</td>'
+      +'<td style="padding:8px 16px">'+bar(d.send,'#2563eb',d.sendN)+'</td>'
+      +'<td style="padding:8px 16px">'+bar(d.biz,'#d97706',d.bizN)+'</td>'
+      +'</tr>';
+  });
+  tb.innerHTML = rows;
+
+  var cb = document.getElementById('chargeBar');
+  if (!cb) return;
+  var html2 = '';
+  var mx = Math.max.apply(null, convData.map(function(d){return d.charge;}));
+  convData.forEach(function(d) {
+    html2 += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+      +'<div style="width:60px;font-size:12px;font-weight:700;color:#0f172a">'+d.name+'</div>'
+      +'<div style="flex:1;height:12px;background:#f1f5f9;border-radius:6px;overflow:hidden">'
+      +'<div style="width:'+Math.round(d.charge/mx*100)+'%;height:100%;background:#059669;border-radius:6px"></div>'
+      +'</div>'
+      +'<div style="font-size:12px;font-weight:900;color:#059669;width:45px">'+d.charge+'%</div>'
+      +'<div style="font-size:10px;color:#94a3b8;width:70px">'+d.chargeN+'건/'+d.total+'건</div>'
+      +'</div>';
+  });
+  cb.innerHTML = html2;
+}
+
+var uhData = [{"cat": "승인취소/환불", "uh": 9, "total": 571, "rate": 1.6}, {"cat": "기타", "uh": 4, "total": 1250, "rate": 0.3}, {"cat": "세금계산서", "uh": 2, "total": 545, "rate": 0.4}, {"cat": "서류/견적서 등", "uh": 2, "total": 253, "rate": 0.8}];
+
+
+function renderConvMonthlyChart() {
+  var el      = document.getElementById('conv-monthly-chart');
+  var gapEl   = document.getElementById('conv-gap-box');
+  var legendEl= document.getElementById('conv-legend');
+  if (!el) return;
+
+  var GROUPS = [
+    { label:'충전 전환율',    apr:6.8, may:4.7, jun:1.2 },
+    { label:'첫 발송 전환율', apr:5.8, may:3.1, jun:0.0 },
+    { label:'사업자 인증률',  apr:2.1, may:2.2, jun:0.9 }
+  ];
+  var MONTHS  = [{k:'apr',label:'4월',color:'#94a3b8'},{k:'may',label:'5월',color:'#3b82f6'},{k:'jun',label:'6월',color:'#f87171'}];
+  var MAX = 10;
+  var BAR_H = 180; /* px */
+
+  /* ── 범례 ── */
+  if (legendEl) {
+    legendEl.innerHTML = MONTHS.map(function(m) {
+      return '<span style="display:inline-flex;align-items:center;gap:5px;margin-right:16px;font-size:11px;font-weight:600;color:#374151;">'
+        + '<span style="width:12px;height:12px;border-radius:3px;background:'+m.color+';flex-shrink:0;"></span>'
+        + (m.k==='jun' ? '6월 (현재)' : m.label) + '</span>';
+    }).join('');
+  }
+
+  /* ── Y축 눈금선 HTML ── */
+  var yGridHtml = '';
+  for (var y = 0; y <= MAX; y += 2) {
+    var bot = Math.round(y / MAX * BAR_H);
+    yGridHtml += '<div style="position:absolute;bottom:'+bot+'px;left:0;right:0;border-top:1px solid #f1f5f9;pointer-events:none;">'
+      + '<span style="position:absolute;left:-34px;top:-8px;font-size:10px;color:#94a3b8;white-space:nowrap;">'+y+'%</span>'
+      + '</div>';
+  }
+
+  /* ── 그룹 막대 HTML ── */
+  var groupsHtml = GROUPS.map(function(g) {
+    var barsHtml = MONTHS.map(function(m) {
+      var h = Math.round(g[m.k] / MAX * BAR_H);
+      return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:20px;">'
+        + '<span style="font-size:9px;font-weight:700;color:#374151;margin-bottom:3px;">' + g[m.k] + '%</span>'
+        + '<div style="width:20px;height:'+h+'px;background:'+m.color+';border-radius:3px 3px 0 0;" title="'+m.label+' '+g.label+': '+g[m.k]+'%"></div>'
+        + '</div>';
+    }).join('');
+
+    return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;">'
+      + '<div style="display:flex;align-items:flex-end;gap:4px;height:'+BAR_H+'px;">' + barsHtml + '</div>'
+      + '<div style="font-size:11px;font-weight:700;color:#374151;text-align:center;margin-top:8px;line-height:1.4;">' + g.label + '</div>'
+      + '</div>';
+  }).join('');
+
+  /* ── 전체 차트 조립 ── */
+  el.innerHTML =
+    '<div style="display:flex;align-items:flex-end;padding-left:38px;">'
+    + '<div style="flex:1;position:relative;">'
+    +   '<div style="position:absolute;bottom:0;left:0;right:0;height:'+BAR_H+'px;">' + yGridHtml + '</div>'
+    +   '<div style="position:relative;display:flex;gap:16px;">' + groupsHtml + '</div>'
+    + '</div>'
+    + '</div>';
+
+  /* ── 격차 진단 박스 (5월→6월) ── */
+  if (!gapEl) return;
+  gapEl.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">'
+    + GROUPS.map(function(g) {
+        var icons = {'충전 전환율':'💳','첫 발송 전환율':'✉️','사업자 인증률':'🏢'};
+        var diff = Math.round((g.jun - g.may) * 10) / 10;
+        var isDown = diff < 0;
+        return '<div style="flex:1;min-width:150px;padding:10px 14px;border-radius:8px;'
+          + 'background:'+(isDown?'#fff1f2':'#f0fdf4')+';border:1px solid '+(isDown?'#fca5a5':'#bbf7d0')+';font-size:11px;">'
+          + '<div style="font-weight:800;color:#0f172a;margin-bottom:4px;">'+(icons[g.label]||'')+ ' ' +g.label+'</div>'
+          + '<div style="color:#374151;">5월 <b>'+g.may+'%</b> ➡ 6월 <b>'+g.jun+'%</b></div>'
+          + '<div style="margin-top:5px;font-weight:900;font-size:12px;color:'+(isDown?'#dc2626':'#15803d')+'">'
+          + (isDown ? '▼ '+Math.abs(diff)+'%p 하락 / ❌ 누수 발생' : '▲ +'+diff+'%p 상승 / ✅ 개선')
+          + '</div></div>';
+      }).join('')
+    + '</div>';
+}
+
+function renderQualitySection() {
+  var M_COLORS = ['#cbd5e1', '#3b82f6', '#ef4444'];
+  var MONTHS   = ['4월', '5월', '6월'];
+
+  function legend() {
+    return '<div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">'
+      + MONTHS.map(function(m,i){
+          return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#374151;">'
+            + '<span style="width:12px;height:12px;border-radius:2px;background:'+M_COLORS[i]+'"></span>'+m+'</span>';
+        }).join('') + '</div>';
+  }
+
+  /*
+   * ── 핵심 수정 ──
+   * 기존: 리스크 배지를 flex-column wrapper로 감싸면 자식 div의 height:%가
+   *       wrapper의 auto 높이를 기준으로 계산되어 → 기둥 높이 0px 버그 발생
+   * 수정: 배지를 position:absolute 로 bars 컨테이너 밖에 띄움
+   *       → 각 bar는 height:140px flex 컨테이너를 직접 부모로 삼아 % 정상 계산
+   */
+  function group(label, pcts, showRiskOn6, tipFn) {
+    var bars = pcts.map(function(p, i) {
+      var tip = tipFn ? tipFn(i) : (MONTHS[i] + ': ' + p + '%');
+      return '<div style="height:' + p + '%;width:14px;background:' + M_COLORS[i]
+        + ';border-radius:2px 2px 0 0;" title="' + tip + '"></div>';
+    }).join('');
+
+    var badge = showRiskOn6
+      ? '<span style="position:absolute;top:-22px;right:0;font-size:8px;background:#fef2f2;'
+        + 'border:1px solid #fca5a5;border-radius:3px;color:#dc2626;font-weight:800;'
+        + 'padding:1px 5px;white-space:nowrap;line-height:1.6;">⚠️ 전월 대비 리스크 감지</span>'
+      : '';
+
+    return '<div style="display:flex;flex-direction:column;align-items:center;width:70px;">'
+      + '<div style="position:relative;display:flex;align-items:flex-end;gap:4px;height:140px;">'
+      + bars + badge
+      + '</div>'
+      + '<span style="font-size:10px;color:#475569;font-weight:700;margin-top:8px;text-align:center;'
+      + 'line-height:1.3;max-width:70px;">' + label + '</span>'
+      + '</div>';
+  }
+
+  function chart(groups) {
+    return '<div style="display:flex;justify-content:space-around;align-items:flex-end;height:200px;'
+      + 'padding:36px 10px 0;border-bottom:2px solid #e2e8f0;position:relative;overflow:visible;">'
+      + '<div style="position:absolute;left:0;width:100%;top:50px;border-top:1px dashed #cbd5e1;pointer-events:none;"></div>'
+      + '<div style="position:absolute;left:0;width:100%;top:120px;border-top:1px dashed #cbd5e1;pointer-events:none;"></div>'
+      + groups + '</div>';
+  }
+
+  /* ══ 좌측: 응답 시간 분포 ══
+     블루프린트 그대로 — max=65.3, height:% 직접 사용 */
+  var respEl = document.getElementById('quality-resp-chart');
+  if (respEl) {
+    var respData = [
+      {label:'2시간 이내',  p:[65.3, 32.5,  8.8], risk:false},
+      {label:'~8시간',      p:[13.7, 20.2, 15.5], risk:false},
+      {label:'~24시간',     p:[15.4, 23.6, 20.2], risk:false},
+      {label:'24시간 초과', p:[ 5.6, 23.7, 55.6], risk:true}
+    ];
+    var gHtml = respData.map(function(d){
+      return group(d.label, d.p, d.risk);
+    }).join('');
+    respEl.innerHTML = legend()
+      + chart(gHtml)
+      + '<div style="margin-top:10px;font-size:11px;color:#dc2626;background:#fff1f2;border:1px solid #fca5a5;'
+      + 'border-radius:5px;padding:7px 10px;font-weight:600;">'
+      + '▼ 24시간 초과 방치 건수 전월 대비 61% 급증 — 금주 스프린트 집중 개선 필요'
+      + '</div>';
+  }
+
+  /* ══ 우측: 분류2 미처리 추이
+     max=296건 기준으로 정규화 → height:pct%
+     (세금계산서: 8→87→296 수직 상승이 기둥 높이로 명확하게 대비됨) */
+  var catEl = document.getElementById('quality-cat-chart');
+  if (catEl) {
+    var MAX_CAT = 296;
+    var catData = [
+      {label:'세금계산서',    raw:[  8,  87, 296]},
+      {label:'승인취소/환불', raw:[ 19,  70, 109]},
+      {label:'서류/견적서',   raw:[  9,  44,  99]},
+      {label:'API',           raw:[  9,  34,  73]}
+    ];
+    var cHtml = catData.map(function(d) {
+      var pcts = d.raw.map(function(v){ return Math.round(v / MAX_CAT * 100); });
+      return group(d.label, pcts, true, function(i){
+        return MONTHS[i] + ': ' + d.raw[i] + '건';
+      });
+    }).join('');
+    catEl.innerHTML = legend()
+      + chart(cHtml)
+      + '<div style="margin-top:10px;font-size:11px;color:#dc2626;background:#fff1f2;border:1px solid #fca5a5;'
+      + 'border-radius:5px;padding:7px 10px;font-weight:600;">'
+      + '▼ 세금계산서·승인취소/환불 3개월 연속 우상향 — 가이드라인 재정비 및 처리 표준화 시급'
+      + '</div>';
+  }
+}
+
+function renderUH() {
+  var maxUh = Math.max.apply(null, uhData.map(function(d){return d.uh;}));
+  var barHtml = '', rateHtml = '';
+  uhData.forEach(function(d) {
+    var pct = maxUh > 0 ? Math.round(d.uh / maxUh * 100) : 0;
+    barHtml += '<div class="br" style="margin-bottom:9px"><div class="bl2" style="width:130px;font-size:10px">'+d.cat+'</div><div class="bt"><div class="bf" style="width:'+pct+'%;background:#f59e0b"></div></div><div class="bc" style="color:#1e293b">'+d.uh+'건</div></div>';
+    rateHtml += '<div class="row"><span style="font-size:11px">'+d.cat+'</span><span style="font-weight:700;color:#64748b">'+d.rate+'%</span></div>';
+  });
+  var el1 = document.getElementById('uhBar');
+  var el2 = document.getElementById('uhRate');
+  if (el1) el1.innerHTML = barHtml;
+  if (el2) el2.innerHTML = rateHtml;
+}
+
+var _periodMap = {
+  7:  {unhandled:136, label:'최근 7일 기준'},
+  30: {unhandled:155, label:'최근 30일 기준'},
+  90: {unhandled:172, label:'최근 90일 기준'},
+  0:  {unhandled:172, label:'전체 기간'}
+};
+function setPeriod(days){
+  var d = _periodMap[days] || _periodMap[30];
+  var periodLabel = days === 0 ? '전체 누적' : '최근 ' + days + '일 누적';
+  // badge-period-1과 kv-unhandled는 전주 데이터 고정 (updateKPIBadges가 관리)
+  var bp2 = document.getElementById('badge-period-2');
+  if (bp2) bp2.textContent = periodLabel;
+  ['pbtn7','pbtn30','pbtn90','pbtn0'].forEach(function(id){
+    document.getElementById(id).classList.remove('active');
+  });
+  var btnMap = {7:'pbtn7',30:'pbtn30',90:'pbtn90',0:'pbtn0'};
+  var btn = document.getElementById(btnMap[days]);
+  if (btn) btn.classList.add('active');
+  var lbl = document.getElementById('donut-label');
+  if (lbl) {
+    var completed = 4128 - d.unhandled;
+    lbl.textContent = '완료 ' + completed.toLocaleString() + '건 / 미처리 ' + d.unhandled + '건';
+  }
+}
+var _dailyUnhandled = {"2026-04-07":4,"2026-04-08":1,"2026-04-14":1,"2026-04-15":4,"2026-04-16":4,"2026-04-17":3,"2026-05-02":1,"2026-05-04":1,"2026-05-06":1,"2026-05-14":1,"2026-05-15":3,"2026-05-18":4,"2026-05-19":1,"2026-05-21":2,"2026-05-22":4,"2026-05-24":1,"2026-05-26":9,"2026-05-27":49,"2026-05-28":78};
+function applyCustomDate(){
+  var from = document.getElementById('date-from').value;
+  var to   = document.getElementById('date-to').value;
+  if (!from || !to) return;
+  var cnt = 0;
+  Object.keys(_dailyUnhandled).forEach(function(dt){
+    if (dt >= from && dt <= to) cnt += _dailyUnhandled[dt];
+  });
+  document.getElementById('kv-unhandled').textContent = cnt;
+  document.getElementById('ks-unhandled').textContent = from + ' ~ ' + to;
+  ['pbtn7','pbtn30','pbtn90','pbtn0'].forEach(function(id){
+    document.getElementById(id).classList.remove('active');
+  });
+  var lbl = document.getElementById('donut-label');
+  if (lbl) lbl.textContent = '완료 ' + (4128-cnt).toLocaleString() + '건 / 미처리 ' + cnt + '건';
+}
+
+// ── AARRR 퍼널 인라인 렌더링 (KPI 카드 아래 삽입) ──
+function renderAARRRFunnelInline() {
+  var el = document.getElementById('aarrr-funnel-inline');
+  if (!el) return;
+  var sd = window._SLACK_DATA;
+  if (!sd || !sd.funnel) { el.innerHTML = ''; return; }
+
+  var f = sd.funnel;
+  var steps = [
+    { label: '신규 가입',     val: f.signup.val,      rate: 100,              avg12Rate: 100,   color: '#7c3aed' },
+    { label: '발신번호 인증', val: f.callerAuth.val,   rate: f.callerAuth.rate,  avg12Rate: 99.1,  color: '#2563eb' },
+    { label: '온보딩 완료',   val: f.onboarding.val,  rate: f.onboarding.rate,  avg12Rate: 42.1,  color: '#0891b2' },
+    { label: '첫 충전',       val: f.firstCharge.val, rate: f.firstCharge.rate, avg12Rate: 36.9,  color: '#059669' },
+    { label: '첫 발송',       val: f.firstSend.val,   rate: f.firstSend.rate,   avg12Rate: 29.6,  color: '#d97706' }
+  ];
+
+  function fmt(n) { return Number(n).toLocaleString('ko-KR'); }
+
+  var stepsHtml = steps.map(function(s, i) {
+    var diffPt = i > 0 ? Math.round((s.rate - s.avg12Rate) * 10) / 10 : null;
+    var diffStr = diffPt !== null
+      ? '<div style="font-size:9px;color:' + (diffPt >= 0 ? '#059669' : '#dc2626') + ';margin-top:1px;">'
+        + (diffPt >= 0 ? '▲' : '▼') + Math.abs(diffPt) + '%p vs 12주평균</div>'
+      : '<div style="font-size:9px;color:#94a3b8;margin-top:1px;">기준값</div>';
+
+    var stepBox = '<div style="flex:1;text-align:center;background:white;border-radius:8px;padding:8px 5px;border:1.5px solid ' + s.color + '20;">'
+      + '<div style="font-size:9px;color:#64748b;font-weight:600;margin-bottom:3px;line-height:1.2;">' + s.label + '</div>'
+      + '<div style="font-size:17px;font-weight:900;color:#0f172a;line-height:1;">' + fmt(s.val) + '</div>'
+      + '<div style="font-size:9px;color:#94a3b8;margin-bottom:3px;">명</div>'
+      + '<div style="background:' + s.color + ';color:white;border-radius:4px;font-size:10px;font-weight:800;padding:2px 0;margin:0 4px;">'
+        + (i === 0 ? '100%' : s.rate + '%') + '</div>'
+      + diffStr
+      + '</div>';
+
+    if (i < steps.length - 1) {
+      return stepBox + '<div style="font-size:16px;color:#c4b5fd;flex-shrink:0;padding:0 3px;align-self:center;">›</div>';
+    }
+    return stepBox;
+  }).join('');
+
+  el.innerHTML = '<div style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1.5px solid #ddd6fe;border-radius:10px;padding:12px 14px;">'
+    + '<div style="display:flex;align-items:stretch;gap:0;">' + stepsHtml + '</div>'
+    + '<div style="margin-top:8px;font-size:9px;color:#a78bfa;text-align:right;">기준: ' + sd.period.label + ' &nbsp;|&nbsp; 갱신: ' + sd.updatedAt + '</div>'
+    + '</div>';
+}
+
+// ── 슬랙 기반 서비스 성장 지표 렌더링 ──
+function renderSlackGrowth() {
+  var el = document.getElementById('slack-growth-section');
+  if (!el) return;
+  var sd = window._SLACK_DATA;
+  if (!sd) { el.innerHTML = ''; return; }
+
+  function fmt(n) { return Number(n).toLocaleString('ko-KR'); }
+  function fmtM(n) { return (n / 100000000).toFixed(1) + '억'; }  // 억 단위
+  function badge(diff, reverse) {
+    var up = reverse ? diff < 0 : diff > 0;
+    var c  = up ? '#059669' : '#dc2626';
+    var bg = up ? '#d1fae5' : '#fee2e2';
+    var arrow = diff > 0 ? '▲' : '▼';
+    return '<span style="font-size:10px;font-weight:700;color:' + c + ';background:' + bg + ';padding:2px 7px;border-radius:20px;">' + arrow + Math.abs(diff) + '%</span>';
+  }
+  function kCard(label, val, unit, diff, reverse, sub) {
+    return '<div style="flex:1;background:#f8fafc;border-radius:10px;padding:11px 13px;min-width:0;">'
+      + '<div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:4px;">' + label + '</div>'
+      + '<div style="display:flex;align-items:baseline;gap:6px;">'
+      + '<span style="font-size:22px;font-weight:900;color:#0f172a;">' + val + '</span>'
+      + '<span style="font-size:11px;color:#64748b;">' + unit + '</span>'
+      + badge(diff, reverse)
+      + '</div>'
+      + (sub ? '<div style="font-size:10px;color:#94a3b8;margin-top:3px;">' + sub + '</div>' : '')
+      + '</div>';
+  }
+
+  var a = sd.acquisition, au = sd.activeUsers, r = sd.revenue, auth = sd.auth;
+
+  // ─ 섹션 헤더
+  var html = '<div class="sec-label" style="display:flex;align-items:center;justify-content:space-between;">'
+    + '<span>📡 서비스 성장 지표 <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#ede9fe;border:1px solid #ddd6fe;padding:2px 8px;border-radius:20px;margin-left:6px;">슬랙 자동 집계</span></span>'
+    + '<span style="font-size:10px;color:#94a3b8;">기준: ' + sd.period.label + ' &nbsp;|&nbsp; 갱신: ' + sd.updatedAt + '</span>'
+    + '</div>';
+
+  // ─ Row 1: 가입자 + 활성 사용자
+  html += '<div style="display:flex;gap:10px;margin-bottom:10px;">'
+    + kCard('신규 가입', fmt(a.newUsers.val), '명', a.newUsers.diff, false,
+        '사업자 ' + fmt(a.bizUsers.val) + ' / 개인 ' + fmt(a.personalUsers.val) + ' | 12주 평균 ' + fmt(a.newUsers.avg12) + '명')
+    + kCard('탈퇴', fmt(a.churn.val), '명', a.churn.diff, true,
+        '12주 평균 ' + fmt(a.churn.avg12) + '명')
+    + kCard('휴면 전환', fmt(a.dormant.val), '명', a.dormant.diff, true,
+        '해제 ' + fmt(a.dormantResume.val) + '명 | 12주 평균 ' + fmt(a.dormant.avg12) + '명')
+    + kCard('WAU (로그인)', fmt(au.login.val), '명', au.login.diff, false,
+        '발송 ' + fmt(au.send.val) + '명 | 결제 ' + fmt(au.payment.val) + '명')
+    + '</div>';
+
+  // ─ Row 2: 매출 + 인증
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+    // 매출 카드
+    + '<div style="background:#f8fafc;border-radius:10px;padding:13px 15px;">'
+    + '<div style="font-size:11px;font-weight:800;color:#0f172a;margin-bottom:10px;">💳 매출 지표</div>'
+    + '<div style="display:flex;flex-direction:column;gap:7px;">'
+    + ['충전 매출', '발송 매출'].map(function(lbl, i) {
+        var rv = i === 0 ? r.chargeRevenue : r.sendRevenue;
+        var up = rv.diff > 0;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;padding-bottom:5px;">'
+          + '<span style="font-size:11px;color:#374151;">' + lbl + '</span>'
+          + '<div style="text-align:right;">'
+          + '<span style="font-size:14px;font-weight:800;color:#0f172a;">' + fmtM(rv.val) + '</span>'
+          + ' ' + badge(rv.diff, false)
+          + '<div style="font-size:9px;color:#94a3b8;">12주 평균 ' + fmtM(rv.avg12) + '</div>'
+          + '</div></div>';
+      }).join('')
+    + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+    + '<span style="font-size:11px;color:#374151;">충전 건수</span>'
+    + '<span style="font-size:13px;font-weight:700;color:#0f172a;">' + fmt(r.chargeCount.val) + '건 ' + badge(r.chargeCount.diff, false) + '</span>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+    + '<span style="font-size:11px;color:#374151;">W-ARPU</span>'
+    + '<span style="font-size:13px;font-weight:700;color:#0f172a;">' + fmt(r.wArpu.val) + '원 ' + badge(r.wArpu.diff, false) + '</span>'
+    + '</div>'
+    + '</div></div>'
+    // 인증 카드
+    + '<div style="background:#f8fafc;border-radius:10px;padding:13px 15px;">'
+    + '<div style="font-size:11px;font-weight:800;color:#0f172a;margin-bottom:10px;">🔐 인증 지표</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;">'
+    + [
+        { label: '발신번호 등록', d: auth.callerReg },
+        { label: '사업자 인증',   d: auth.bizAuth }
+      ].map(function(item) {
+        var d = item.d;
+        var approveC = d.approveRate >= 80 ? '#059669' : d.approveRate >= 65 ? '#d97706' : '#dc2626';
+        var rejectC  = d.rejectRate  <= 5  ? '#94a3b8' : '#dc2626';
+        return '<div style="border-bottom:1px solid #f1f5f9;padding-bottom:7px;">'
+          + '<div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:4px;">' + item.label + ' — ' + fmt(d.total) + '건 ' + badge(d.diff, false) + '</div>'
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap;">'
+          + '<span style="font-size:10px;background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:20px;">승인 ' + fmt(d.approved) + '건 (' + d.approveRate + '%)</span>'
+          + '<span style="font-size:10px;background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:20px;">거부 ' + fmt(d.rejected) + '건 (' + d.rejectRate + '%)</span>'
+          + '<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:20px;">대기 ' + fmt(d.pending) + '건</span>'
+          + '</div>'
+          + '<div style="margin-top:5px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">'
+          + '<div style="height:100%;width:' + d.approveRate + '%;background:' + approveC + ';border-radius:3px;"></div>'
+          + '</div>'
+          + '</div>';
+      }).join('')
+    + '<div style="font-size:10px;color:#64748b;margin-top:4px;">'
+    + '14일 코호트 — 결제전환 <b>' + sd.cohort14d.payRate.val + '%</b> (+' + sd.cohort14d.payRate.diff + '%p) | 발송전환 <b>' + sd.cohort14d.sendRate.val + '%</b> (+' + sd.cohort14d.sendRate.diff + '%p)'
+    + '</div>'
+    + '</div></div>'
+    + '</div>';
+
+  el.innerHTML = html;
+}
+
+window.addEventListener('DOMContentLoaded', function(){
+  renderConvMonthlyChart();
+  renderMonthlyTrendSection();
+  renderAARRRFunnelInline();
+  renderSlackGrowth();
+
+  /* pg-c가 hidden 상태에서 Chart.js 초기화 → 캔버스 크기 0px 버그 방지
+     탭 선택 시 재렌더링 */
+  /* 탭 label 클릭 시 차트 재렌더링 (hidden canvas → 0px 버그 방지) */
+  var _tabLabel = document.querySelector('label[for="r-c"]');
+  if (_tabLabel) _tabLabel.addEventListener('click', function() {
+    setTimeout(renderConvMonthlyChart, 80);
+  });
+  var _tabLabelS = document.querySelector('label[for="r-s"]');
+  if (_tabLabelS) _tabLabelS.addEventListener('click', function() {
+    setTimeout(function() { renderQualitySection(); renderUH(); }, 80);
+  });
+  renderQualitySection();
+  initConvData();
+  renderUH();
+  setPeriod(30);
+  /* jAlts 패널은 현재 미사용 */
+});
+
+function jToggleAlt(num) {
+  var panel = document.getElementById('j-alt-panel-0'+num);
+  if (!panel) return;
+  var isHidden = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = isHidden ? 'block' : 'none';
+  var btn = document.getElementById('j-alt-btn-0'+num);
+  if (btn) btn.textContent = isHidden ? '▲ 닫기' : '이 액션이 맞지 않아요 →';
+}
+
+function jSelectAlt(num, idx) {
+  var alt = jAlts[num][idx];
+  if (!alt) return;
+  jTasks[num].summary = alt.title;
+  jTasks[num].desc = '배경: ' + alt.why + '\n\n서브태스크:\n' + alt.subs.map(function(s,i){ return (i+1)+'. '+s; }).join('\n');
+  jTasks[num].subs = alt.subs;
+  var titleEl = document.getElementById('j-story-title-0'+num);
+  var descEl  = document.getElementById('j-story-desc-0'+num);
+  var subsEl  = document.getElementById('j-story-subs-0'+num);
+  if (titleEl) titleEl.textContent = alt.title;
+  if (descEl)  descEl.textContent  = alt.why;
+  if (subsEl) {
+    var icons = ['📋','✍️','📊','📢'];
+    subsEl.innerHTML = alt.subs.map(function(s, i) {
+      var parts = s.split(' | 이유: ');
+      var main = parts[0]; var why = parts[1] || '';
+      return '<div style="display:flex;align-items:flex-start;gap:7px;padding:6px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px">'
+        + '<span style="font-size:10px;width:16px;text-align:center;flex-shrink:0;margin-top:1px">' + (icons[i] || '▸') + '</span>'
+        + '<span style="font-size:11px;color:#374151;flex:1">' + main
+        + (why ? '<br><span style="font-size:9px;color:#94a3b8;">' + why + '</span>' : '')
+        + '</span><span id="j-sub-0' + num + '-' + (i+1) + '" style="font-size:10px;font-weight:700;"></span></div>';
+    }).join('');
+  }
+  var panel = document.getElementById('j-alt-panel-0'+num);
+  if (panel) panel.style.display = 'none';
+  var btn = document.getElementById('j-alt-btn-0'+num);
+  if (btn) btn.textContent = '이 액션이 맞지 않아요 →';
+  var stEl = document.getElementById('j-st-0'+num);
+  if (stEl) { stEl.style.background='#fef3c7'; stEl.style.color='#92400e'; stEl.textContent='수정됨'; }
+  var regBtn = document.getElementById('j-btn-0'+num);
+  if (regBtn) { regBtn.disabled=false; regBtn.style.background='#0052CC'; regBtn.innerHTML='등록하기'; }
+  var resEl = document.getElementById('j-result-0'+num);
+  if (resEl) resEl.innerHTML = '';
+}
+
+var jTasks = {
+  1: { summary: '[TASK 01] 인증 거절 사유별 재안내 문자 템플릿 작성 및 발송', priority: 'Highest',
+       desc: '【진단】\n재안내 가능한 인증 거절·반려 397건, 거절 사유가 7~8개 유형에 집중\n\n【실행 과제】\n사유별 표준 재안내 문자 템플릿 작성 후 대상 397건에 발송\n\n【근거】\n발신번호 거절 299건 + 사업자 반려 190건 중 재안내 가능 397건',
+       subs: ['통신서비스 이용증명원 관련 거절(팩스 미수신·발급 1개월 경과) 재안내 문자 템플릿 작성 | 이유: 이용증명원 사유 거절 27건으로 단일 사유 중 최다, 표준 문구로 재신청 안내 가능',
+              '사업자등록증·증명 위변조 QR·세무서장 직인 미확인 거절 재안내 문자 템플릿 작성 | 이유: QR·직인 사유 거절 34건, 서류 재발급 방법이 동일해 1개 템플릿으로 커버 가능',
+              '주민번호 마스킹 누락·재직증명서 미비 거절 재안내 문자 템플릿 작성 | 이유: 마스킹·재직증명서 사유 16건, 보완 기준이 명확해 표준화 용이',
+              '작성한 사유별 템플릿을 대상 397건에 매칭해 재안내 문자 발송 | 이유: 재안내 가능 397건 전체가 표준 문자 발송으로 재신청 전환 유도 가능'] },
+  2: { summary: '[TASK 02] 응답 지연 반복 유발 유형 표준 답변 체계 구축', priority: 'High',
+       desc: '【진단】\n24시간 초과 응답 1512건 중 1305건(86%)이 스마트문자 문의에 집중\n\n【실행 과제】\n반복 지연 유형 표준 답변 문안 작성 및 응답 가이드 문서화\n\n【근거】\n초과 응답 1512건, 피크 응답 25.6h',
+       subs: ['24시간 초과 응답 1위 스마트문자 문의의 세부 질문 유형 추출 | 이유: 초과 1512건 중 1305건(86%)이 이 유형, 세분화 시 표준화 대상 도출 가능',
+              '추출된 스마트문자 반복 질문에 대한 표준 답변 문안 작성 | 이유: 동일 질문 반복으로 표준 답변 1세트가 다수 문의에 재사용 가능',
+              '엑셀파일 등록대행·환불문의 지연 유형 표준 답변 템플릿 작성 | 이유: 각각 73건·59건 초과 발생, 절차 안내형이라 템플릿화 적합',
+              '작성한 표준 답변을 답변 도구에서 바로 호출하도록 응답 가이드 문서로 정리 | 이유: 초과 응답 86% 집중 유형의 답변을 도구에서 즉시 불러오도록 문서화 필요'] },
+  3: { summary: '[TASK 03] 재문의 Top 유형 1회 완결 스크립트 작성', priority: 'High',
+       desc: '【진단】\n30일 내 재문의 사용자 1115명(38.8%), 재문의도 스마트문자 문의에 집중\n\n【실행 과제】\n후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 및 FAQ 반영\n\n【근거】\n재문의 1115명 / 전체 2876명, 재문의율 38.8%',
+       subs: ['재문의 사용자 문의 중 1회로 끝나지 않은 스마트문자 문의 미완결 패턴 분석 | 이유: 재문의 사용자 문의 중 스마트문자가 최다, 미완결 패턴이 스크립트 기초',
+              '자주 누락되는 후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 | 이유: 재문의율 38.8%(1115/2876), 선제 안내로 2차 문의 유발 요소 제거 가능',
+              '엑셀파일 등록대행·이메일 문의 재문의 유형 완결 스크립트 작성 | 이유: 재문의 사용자 문의 411건·244건 발생, 절차 누락이 재문의 원인',
+              '작성한 완결 스크립트를 FAQ·표준 답변에 반영하는 업데이트안 정리 | 이유: 재문의 Top 유형을 1회 답변에 통합해 재문의 감소 근거 확보'] }
+};
+var jAlts = {};
+var _jPreviewNum = null;
+var _jPreviewOwners = {1:'미정', 2:'미정', 3:'미정'};
+var _jPreviewKpis   = {1:'재안내', 2:'응답지연', 3:'재문의'};
+var _jPreviewColors = {1:'#f59e0b', 2:'#ef4444', 3:'#059669'};
+
+function jPreview(num) {
+  _jPreviewNum = num;
+  var t = jTasks[num];
+  var parts = t.desc.split('\n\n');
+  var 진단 = '', 과제 = '', 요청 = '';
+  parts.forEach(function(s) {
+    if (s.indexOf('【진단】') === 0)      진단 = s.replace('【진단】\n', '');
+    else if (s.indexOf('【실행 과제】') === 0) 과제 = s.replace('【실행 과제】\n', '');
+    else if (s.indexOf('【승인 요청】') === 0) 요청 = s.replace('【승인 요청】\n', '');
+  });
+
+  var stepsHtml = t.subs.map(function(s) {
+    return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:7px;">'
+      + '<span style="font-size:12px;color:#1e293b;line-height:1.6;">' + s + '</span></div>';
+  }).join('');
+
+  var pLabel = num === 1 ? 'Highest ⚡' : 'High';
+  var pStyle = num === 1
+    ? 'background:#fee2e2;color:#991b1b;'
+    : 'background:#fef3c7;color:#92400e;';
+
+  document.getElementById('j-preview-content').innerHTML =
+    '<div style="padding:16px 20px;">'
+    + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">'
+    +   '<span style="font-size:10px;font-weight:800;background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:4px;">TASK</span>'
+    +   '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;' + pStyle + '">' + pLabel + '</span>'
+    +   '<span style="font-size:10px;color:#94a3b8;">TF · 운영팀 업무 고도화</span>'
+    + '</div>'
+    + '<div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:14px;line-height:1.4;">' + t.summary + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">'
+    +   '<div style="background:#f8fafc;border-radius:8px;padding:9px 12px;">'
+    +     '<div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase;">담당자</div>'
+    +     '<div style="font-size:13px;font-weight:700;color:#1e293b;">' + (_jPreviewOwners[num] || '미정') + '</div>'
+    +   '</div>'
+    +   '<div style="background:#f8fafc;border-radius:8px;padding:9px 12px;">'
+    +     '<div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase;">KPI 지표</div>'
+    +     '<div style="font-size:13px;font-weight:700;color:' + (_jPreviewColors[num] || '#1e293b') + ';">' + (_jPreviewKpis[num] || '-') + '</div>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="margin-bottom:12px;">'
+    +   '<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;">설명</div>'
+    +   (진단 ? '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:9px 12px;margin-bottom:7px;font-size:12px;color:#92400e;line-height:1.6;"><b>📊 진단:</b> ' + 진단 + '</div>' : '')
+    +   (과제 ? '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:9px 12px;margin-bottom:7px;font-size:12px;color:#1d4ed8;line-height:1.6;"><b>⚡ 실행 과제:</b> ' + 과제 + '</div>' : '')
+    +   (요청 ? '<div style="background:#fee2e2;border:1px solid #fecaca;border-radius:7px;padding:9px 12px;font-size:12px;color:#dc2626;line-height:1.6;font-weight:700;"><b>🔴 승인 요청:</b> ' + 요청 + '</div>' : '')
+    + '</div>'
+    + (t.subs && t.subs.length
+        ? '<div><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">서브태스크 (' + t.subs.length + ')</div>' + stepsHtml + '</div>'
+        : '')
+    + '</div>';
+
+  document.getElementById('j-preview-reg-btn').onclick = function() {
+    jPreviewClose();
+    jRequestMCP(_jPreviewNum);
+  };
+
+  var modal = document.getElementById('j-preview-modal');
+  modal.style.display = 'flex';
+}
+
+function jPreviewClose() {
+  var modal = document.getElementById('j-preview-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function jRequestMCP(num) {
+  var labels = {1:'TASK 01', 2:'TASK 02', 3:'TASK 03', 4:'TASK 04'};
+  var msg = labels[num] + ' Jira에 등록해줘';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(function(){
+      toast('📋 "' + msg + '" — Claude 채팅창에 붙여넣으세요!', 'ok');
+    }).catch(function(){
+      toast('Claude에게 "' + msg + '" 라고 말씀해주세요!', 'ok');
+    });
+  } else {
+    toast('Claude에게 "' + msg + '" 라고 말씀해주세요!', 'ok');
+  }
+}
+
+// 다음 TASK 번호 계산 (localStorage에서 마지막 번호 이어받기)
+function jNextTaskNum(offset) {
+  var base = 0;
+  try { base = parseInt(localStorage.getItem('j_last_task_num') || '0') || 0; } catch(e) {}
+  return base + offset; // offset: 1번째=1, 2번째=2, ...
+}
+function jSaveLastTaskNum(n) {
+  try { localStorage.setItem('j_last_task_num', String(n)); } catch(e) {}
+}
+
+function jRegisterTask(num) {
+  var taskNum  = jNextTaskNum(num); // num=1이면 base+1, num=2면 base+2
+  var padded   = taskNum < 10 ? '0' + taskNum : String(taskNum);
+  var today    = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g,'-').replace('.','');
+  toast('🔄 TASK ' + padded + ' 등록 요청 중…', 'ok');
+
+  // 기본값 자동 보충
+  var dEl = document.getElementById('j-domain');
+  var pEl = document.getElementById('j-project');
+  var eEl = document.getElementById('j-email');
+  var kEl = document.getElementById('j-token');
+  if (dEl && !dEl.value) dEl.value = 'alipeople.atlassian.net';
+  if (pEl && !pEl.value) pEl.value = 'TF';
+  if (eEl && !eEl.value) eEl.value = 'ejchoi@alipeople.kr';
+  if (kEl && !kEl.value) { try { var sv = localStorage.getItem('j_tok'); if (sv) kEl.value = sv; } catch(ex) {} }
+
+  var dom   = (dEl ? dEl.value : '').trim();
+  var proj  = (pEl ? pEl.value : '').trim();
+  var email = (eEl ? eEl.value : '').trim();
+  var tok   = (kEl ? kEl.value : '').trim();
+
+  var btn   = document.getElementById('j-btn-0' + num);
+  var resEl = document.getElementById('j-result-0' + num);
+
+  if (!tok) {
+    toast('⚠️ API 토큰을 입력해주세요', 'warn');
+    if (resEl) resEl.innerHTML = '<span style="color:#dc2626;font-weight:700;">⚠️ Jira 연결 설정에서 API 토큰을 입력해주세요.</span>';
+    if (kEl) { kEl.style.border = '2px solid #dc2626'; kEl.focus(); }
+    return;
+  }
+  if (!dom || !proj || !email) {
+    toast('⚠️ 도메인/프로젝트 키/이메일을 확인해주세요', 'warn');
+    if (resEl) resEl.innerHTML = '<span style="color:#dc2626;font-weight:700;">⚠️ 도메인/프로젝트 키/이메일을 확인해주세요.</span>';
+    return;
+  }
+  try { localStorage.setItem('j_tok', tok); } catch(ex) {}
+
+  var t = jTasks[num];
+  // 번호 교체 + 날짜 추가
+  var newSummary = t.summary.replace(/\[TASK \d+\]/, '[TASK ' + padded + ']');
+  var newDesc    = '생성일: ' + today + '\n\n' + t.desc;
+
+  if (btn) { btn.disabled = true; btn.textContent = '등록 중…'; }
+  if (resEl) resEl.innerHTML = '';
+
+  fetch('https://' + dom + '/rest/api/3/issue', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + btoa(email + ':' + tok),
+      'Content-Type':  'application/json',
+      'Accept':        'application/json'
+    },
+    body: JSON.stringify({
+      fields: {
+        project:     { key: proj },
+        summary:     newSummary,
+        description: {
+          version: 1, type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: newDesc.replace(/\n/g, ' ') }] }]
+        },
+        issuetype: { name: 'Task' },
+        priority:  { name: t.priority }
+      }
+    })
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, data:d}; }); })
+  .then(function(res){
+    var stEl  = document.getElementById('j-st-0' + num);
+    if (res.ok) {
+      var key = res.data.key;
+      // 생성 직후 "할일" 상태로 전환 (transition ID: 3)
+      fetch('https://' + dom + '/rest/api/3/issue/' + key + '/transitions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + btoa(email + ':' + tok),
+          'Content-Type':  'application/json',
+          'Accept':        'application/json'
+        },
+        body: JSON.stringify({ transition: { id: '3' } })
+      }).catch(function(){});
+      jSaveLastTaskNum(taskNum); // 마지막 등록 번호 저장
+      if (stEl)  { stEl.textContent='✅ '+key; stEl.style.background='#d1fae5'; stEl.style.color='#065f46'; }
+      if (resEl) resEl.innerHTML='✅ <a href="https://'+dom+'/browse/'+key+'" target="_blank" style="color:#0052CC;font-weight:700;">'+key+' (TASK '+padded+') 에서 보기 →</a>';
+      if (btn)   { btn.textContent='등록됨 ✓'; btn.style.background='#059669'; }
+      toast('✅ TASK ' + padded + ' 등록 완료!', 'ok');
+      var allSt = document.querySelectorAll('[id^="j-st-0"]');
+      var done = 0;
+      allSt.forEach(function(el){ if(el.textContent.indexOf('✅')===0) done++; });
+      var fill = document.getElementById('j-prog-fill');
+      var txt  = document.getElementById('j-prog-text');
+      if (fill) fill.style.width = (done/3*100)+'%';
+      if (txt)  txt.textContent  = done + ' / 3';
+    } else {
+      var msg = (res.data && res.data.errorMessages) ? res.data.errorMessages.join(', ')
+               : (res.data && res.data.errors)       ? JSON.stringify(res.data.errors)
+               : JSON.stringify(res.data);
+      if (resEl) resEl.textContent = '❌ 오류: ' + msg;
+      if (btn)   { btn.disabled=false; btn.textContent='다시 시도'; }
+    }
+  })
+  .catch(function(e){
+    var resEl = document.getElementById('j-result-0' + num);
+    if (resEl) resEl.innerHTML = '❌ 연결 오류: ' + e.message
+      + '<br><small style="color:#94a3b8;">CORS 제한일 수 있습니다. Chrome에서 파일을 열어 시도해보세요.</small>';
+    if (btn) { btn.disabled=false; btn.textContent='다시 시도'; }
+  });
+}
+
+function jRegisterEpic() {
+  var dom   = (document.getElementById('j-domain').value  || '').trim();
+  var proj  = (document.getElementById('j-project').value || '').trim();
+  var email = (document.getElementById('j-email').value   || '').trim();
+  var tok   = (document.getElementById('j-token').value   || '').trim();
+  if (!dom || !proj || !email || !tok) {
+    alert('도메인, 프로젝트 키, 이메일, API 토큰을 모두 입력해주세요.');
+    return;
+  }
+  try { localStorage.setItem('j_tok', tok); } catch(ex) {}
+  var btn = document.getElementById('j-btn-epic');
+  if (btn) { btn.disabled=true; btn.textContent='등록 중…'; }
+  fetch('https://' + dom + '/rest/api/3/issue', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + btoa(email + ':' + tok),
+      'Content-Type':  'application/json',
+      'Accept':        'application/json'
+    },
+    body: JSON.stringify({
+      fields: {
+        project:   { key: proj },
+        summary:   '운영 스프린트 — 2026 Q2',
+        issuetype: { name: 'Epic' }
+      }
+    })
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, data:d}; }); })
+  .then(function(res){
+    var resEl = document.getElementById('j-epic-result');
+    if (res.ok) {
+      var key = res.data.key;
+      if (resEl) resEl.innerHTML='✅ <a href="https://'+dom+'/browse/'+key+'" target="_blank" style="color:#6554C0;font-weight:700;">'+key+' 등록됨</a>';
+      if (btn) { btn.textContent='등록됨 ✓'; btn.style.background='#059669'; }
+    } else {
+      if (resEl) resEl.textContent = '❌ 오류';
+      if (btn) { btn.disabled=false; btn.textContent='다시 시도'; }
+    }
+  })
+  .catch(function(e){
+    var resEl = document.getElementById('j-epic-result');
+    if (resEl) resEl.textContent = '❌ ' + e.message;
+    if (btn) { btn.disabled=false; btn.textContent='다시 시도'; }
+  });
+}
+
+// Jira 기본값 + 저장된 토큰 복원
+window.addEventListener('DOMContentLoaded', function(){
+  // TASK 번호 기준값 초기화 (01~04 이미 등록됨 → 다음은 05부터)
+  try { if (!localStorage.getItem('j_last_task_num')) localStorage.setItem('j_last_task_num', '4'); } catch(e) {}
+  var d = document.getElementById('j-domain');
+  var p = document.getElementById('j-project');
+  var e = document.getElementById('j-email');
+  var k = document.getElementById('j-token');
+  if (d && !d.value) d.value = 'alipeople.atlassian.net';
+  if (p && !p.value) p.value = 'TF';
+  if (e && !e.value) e.value = 'ejchoi@alipeople.kr';
+  if (k) {
+    try {
+      var saved = localStorage.getItem('j_tok');
+      if (saved) {
+        k.value = saved;
+        var s = document.getElementById('j-tok-saved');
+        if (s) s.style.opacity = '1';
+      }
+    } catch(ex) {}
+  }
+});
+</script>
+</body>
+</html>
