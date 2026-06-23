@@ -47,7 +47,12 @@
   .q { font-size: 12.5px; color: #475569; line-height: 1.6; margin-bottom: 10px; padding-left: 10px; border-left: 3px solid #e2e8f0; }
   .q b.h, .a b.h { background: #fef08a; color: #713f12; font-weight: 700; border-radius: 3px; padding: 0 1px; }
   .a-label { font-size: 11px; font-weight: 700; color: #059669; margin-bottom: 5px; }
-  .a { font-size: 13px; color: #1e293b; line-height: 1.7; white-space: pre-wrap; background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 8px; padding: 11px 13px; }
+  .a { font-size: 13.5px; color: #1e293b; background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 8px; padding: 13px 15px; }
+  .a .ln { line-height: 1.72; margin: 0 0 8px; }
+  .a .ln:last-child { margin-bottom: 0; }
+  .a .ln.bul { padding-left: 13px; position: relative; color: #334155; }
+  .a .ln.bul.dot::before { content: ""; position: absolute; left: 3px; top: 9px; width: 4px; height: 4px; border-radius: 50%; background: #16a34a; }
+  .a .ln.head { color: #047857; font-weight: 700; margin-top: 4px; }
   .row { display: flex; gap: 8px; margin-top: 9px; }
   .btn { padding: 8px 13px; font-size: 12px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
   .btn-copy { background: #059669; color: #fff; }
@@ -151,14 +156,46 @@
   }
 
   // ---------- 렌더 ----------
-  function hl(text, qToks){
-    let out = escapeHtml(text);
+  function hl(text, qToks){ return hlEsc(escapeHtml(text), qToks); }
+  function hlEsc(out, qToks){
     qToks.forEach(w=>{
       if (w.length<2) return;
       const re = new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
       out = out.replace(re, '<b class="h">$1</b>');
     });
     return out;
+  }
+
+  // 한 덩어리 답변을 문장·항목 단위로 정리
+  function fmtLines(s){
+    s = (s||"").replace(/\s+/g," ").trim();
+    const keep=[]; const stash=m=>{ keep.push(m); return ""+(keep.length-1)+""; };
+    s = s.replace(/https?:\/\/[^\s가-힣)]+/g, stash);                                    // 스킴 URL 보호
+    s = s.replace(/[A-Za-z][A-Za-z0-9\-]*(?:\.[A-Za-z0-9\-]+)+(?:\/[^\s가-힣]*)?/g, stash); // 도메인/이메일/파일 보호
+    s = s.replace(/([.!?])(?=[^\s\d])/g, "$1 ");          // 마침표 뒤 띄어쓰기 (소수점 보호)
+    s = s.replace(/\)(?=[가-힣A-Za-z])/g, ") ");           // 닫는 괄호 뒤 띄어쓰기
+    s = s.replace(/\s*(\[[가-힣\s]{1,12}\])\s*/g, "\n$1 "); // [라벨] 줄 분리
+    s = s.replace(/\s*([■※])\s*/g, "\n$1 ");               // ■ ※ 항목 줄 분리
+    s = s.replace(/(^|[^0-9])\*\s+/g, "$1\n• ");           // * 글머리
+    s = s.replace(/\s+(\d{1,2})\.\s+(?=[가-힣A-Za-z])/g, "\n$1. "); // 1. 2. 목록
+    s = s.replace(/([가-힣][다요])\.\s+/g, "$1.\n");        // 문장 단위 줄바꿈
+    s = s.replace(/(\d+)/g, (m,i)=> keep[+i]); // 보호분 복원
+    return s.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  }
+  function answerHtml(raw, qToks){
+    return fmtLines(raw).map(l=>{
+      const bul = /^([■※])/.test(l);
+      const dot = /^•/.test(l);
+      const head = /^\[[가-힣\s]{1,12}\]/.test(l);
+      const cls = "ln" + (dot?" bul dot":"") + (bul?" bul head":"") + (head?" head":"");
+      const body = dot ? l.replace(/^•\s*/,"") : l;
+      return `<div class="${cls}">${hlEsc(escapeHtml(body), qToks)}</div>`;
+    }).join("");
+  }
+  function answerPlain(raw){ return fmtLines(raw).join("\n"); }
+  function qPreview(raw, qToks){
+    const esc = escapeHtml(raw.replace(/\s+/g," ").replace(/([.!?])(?=[^\s\d])/g,"$1 ").trim());
+    return hlEsc(esc, qToks);
   }
   function fmtDate(s){ return (s||"").replace("T"," ").slice(0,10); }
 
