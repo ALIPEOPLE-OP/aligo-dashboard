@@ -1,83 +1,75 @@
 // 알리고 슬랙 주간 리포트 데이터 (알리고_뉴스 채널 techbot 자동 집계)
-// 마지막 업데이트: 2026-06-15 (06/07~06/13 기준)
-// 업데이트 방법: Claude에게 "슬랙 데이터 업데이트해줘" 요청
+// 마지막 업데이트: 2026-06-29 (06/21~06/27 기준)
+// 업데이트 방법: Claude에게 "데이터 업데이트 해" 요청
 
 window._SLACK_DATA = {
-  period: { start: '2026-06-07', end: '2026-06-13', label: '06/07(일)~06/13(토)' },
-  updatedAt: '2026-06-15',
+  period: { start: '2026-06-21', end: '2026-06-27', label: '06/21(일)~06/27(토)' },
+  updatedAt: '2026-06-29',
 
-  // ── 가입자 지표 ──
   acquisition: {
-    newUsers:      { val: 469,  avg12: 537,  diff: -12.7 },
-    bizUsers:      { val: 219,  avg12: 229,  diff: -4.4  },
-    personalUsers: { val: 250,  avg12: 291,  diff: -14.1 },
-    churn:         { val: 48,   avg12: 45,   diff: +6.7  },
-    dormant:       { val: 342,  avg12: 382,  diff: -10.5 },
-    dormantResume: { val: 82,   avg12: 93,   diff: -11.8 }
+    newUsers:      { val: 500,  avg12: 529,  diff: -5.5  },
+    bizUsers:      { val: 231,  avg12: 228,  diff: +1.3  },
+    personalUsers: { val: 268,  avg12: 287,  diff: -6.6  },
+    churn:         { val: 43,   avg12: 47,   diff: -8.5  },
+    dormant:       { val: 427,  avg12: 378,  diff: +13.0 },
+    dormantResume: { val: 90,   avg12: 88,   diff: +2.3  }
   },
 
-  // ── AARRR 활성화 퍼널 (신규 가입자 기준) ──
   funnel: {
-    signup:          { val: 469, rate: 100.0,  avg12Rate: 100.0  },
-    callerAuth:      { val: 465, rate: 99.1,   avg12Rate: 99.1   },
-    onboarding:      { val: 216, rate: 46.1,   avg12Rate: 42.1   },
-    firstCharge:     { val: 175, rate: 37.3,   avg12Rate: 36.9   },
-    firstSend:       { val: 138, rate: 29.4,   avg12Rate: 29.6   }
+    signup:      { val: 500, rate: 100.0, avg12Rate: 100.0 },
+    callerAuth:  { val: 494, rate: 98.8,  avg12Rate: 99.1  },
+    onboarding:  { val: 231, rate: 46.2,  avg12Rate: 42.5  },
+    firstCharge: { val: 198, rate: 39.6,  avg12Rate: 36.3  },
+    firstSend:   { val: 148, rate: 29.6,  avg12Rate: 28.7  }
   },
 
-  // ── 활성 사용자 (WAU) ──
   activeUsers: {
-    login:   { val: 13202, avg12: 13060, diff: +1.1  },
-    send:    { val: 15158, avg12: 15137, diff: +0.1  },
-    payment: { val: 1837,  avg12: 1916,  diff: -4.1  }
+    login:   { val: 12705, avg12: 13093, diff: -3.0 },
+    send:    { val: 15075, avg12: 15189, diff: -0.8 },
+    payment: { val: 1796,  avg12: 1914,  diff: -6.2 }
   },
 
-  // ── 매출 ──
   revenue: {
-    sendRevenue:    { val: 499649242,  avg12: 529840867,  diff: -5.7  },
-    chargeRevenue:  { val: 477700000,  avg12: 509179166,  diff: -6.2  },
-    chargeCount:    { val: 2079,       avg12: 2186,       diff: -4.9  },
-    wArpu:          { val: 271992,     avg12: 276361,     diff: -1.6  },
-    wArppu:         { val: 260044,     avg12: 265787,     diff: -2.2  },
-    bizSendRevenue: { val: 468102220,  avg12: 448347045,  diff: +4.4  },
-    bizChargeRevenue:{ val: 445700000, avg12: 421750000,  diff: +5.7  }
+    sendRevenue:      { val: 498521828, avg12: 529635662, diff: -5.9  },
+    chargeRevenue:    { val: 429850000, avg12: 505691666, diff: -15.0 },
+    chargeCount:      { val: 2033,      avg12: 2183,      diff: -6.9  },
+    wArpu:            { val: 277573,    avg12: 276674,    diff: +0.3  },
+    wArppu:           { val: 239337,    avg12: 264222,    diff: -9.4  },
+    bizSendRevenue:   { val: 471958790, avg12: 454165912, diff: +3.9  },
+    bizChargeRevenue: { val: 403600000, avg12: 426441666, diff: -5.4  }
   },
 
-  // ── 인증 지표 ──
   auth: {
     callerReg: {
-      total: 923, avg12: 1047, diff: -11.8,
-      approved: 676, rejected: 50, pending: 27, expired: 1,
-      approveRate: 73.2, rejectRate: 5.4
+      total: 987, avg12: 1027, diff: -3.9,
+      approved: 740, rejected: 30, pending: 21, expired: 0,
+      approveRate: 75.0, rejectRate: 3.0
     },
     bizAuth: {
-      total: 336, avg12: 328, diff: +2.4,
-      approved: 252, rejected: 23, pending: 61,
-      approveRate: 75.0, rejectRate: 6.8
+      total: 323, avg12: 329, diff: -1.8,
+      approved: 263, rejected: 18, pending: 42,
+      approveRate: 81.4, rejectRate: 5.6
     }
   },
 
-  // ── 14일 코호트 전환율 (가입 후 14일 내) ──
   cohort14d: {
-    cohortSize: 520,  // 2026-05-24~05-30 가입자
-    payRate:  { val: 43.5, avg12: 41.6, diff: +1.9 },
-    sendRate: { val: 39.2, avg12: 37.3, diff: +1.9 }
+    cohortSize: 491,
+    payRate:  { val: 42.8, avg12: 42.0, diff: +0.8 },
+    sendRate: { val: 36.7, avg12: 37.6, diff: -0.9 }
   },
 
-  // ── 채널별 발송 ──
   channels: {
-    sms:    { val: 7172523,  avg12: 6921010,  diff: +3.6,  share: 21.4 },
-    lms:    { val: 10130814, avg12: 12329712, diff: -17.8, share: 30.2 },
-    mms:    { val: 2543583,  avg12: 2212686,  diff: +15.0, share: 7.6  },
-    kakao:  { val: 12687330, avg12: 11540378, diff: +9.9,  share: 37.8 },
-    friend: { val: 994084,   avg12: 651043,   diff: +52.7, share: 3.0  }
+    sms:    { val: 5668892,  avg12: 6762546,  diff: -16.2, share: 17.1 },
+    lms:    { val: 11060890, avg12: 12198274, diff: -9.3,  share: 33.4 },
+    mms:    { val: 2237394,  avg12: 2267715,  diff: -1.3,  share: 6.7  },
+    kakao:  { val: 13600342, avg12: 11740369, diff: +15.8, share: 41.0 },
+    friend: { val: 552119,   avg12: 673816,   diff: -18.1, share: 1.7  }
   },
 
-  // ── 리텐션 ──
   retention: {
-    prevWeekSignup: 507,
-    loginReturn:    { val: 182, rate: 35.9 },
-    sendReturn:     { val: 100, rate: 19.7 },
-    avgFirstSendDays: 5.7
+    prevWeekSignup: 499,
+    loginReturn:    { val: 158, rate: 31.7 },
+    sendReturn:     { val: 93,  rate: 18.6 },
+    avgFirstSendDays: 6.1
   }
 };

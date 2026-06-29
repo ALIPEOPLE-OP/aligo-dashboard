@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <script src="data.js"></script>
+<script src="chatData.js"></script>
 <script src="slackData.js"></script>
+<script src="slackWeeklyData.js"></script>
 <title>알리고 운영 현황</title>
 <style>
 :root{color-scheme:light;}
@@ -20,7 +22,7 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
 .sec-label{font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;}
 .sec-label:first-child{margin-top:0;}
 /* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:6px;}
 .kc{border-radius:12px;padding:14px;color:white;}
 .kc.bl{background:linear-gradient(135deg,#2563eb,#3b82f6);}
 .kc.gr{background:linear-gradient(135deg,#059669,#10b981);}
@@ -31,6 +33,14 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
 .kv{font-size:24px;font-weight:900;line-height:1;letter-spacing:-1px;}
 .ku{font-size:12px;font-weight:700;}
 .ks{font-size:10px;opacity:.8;margin-top:4px;}
+/* 인사이트 바 */
+.ins-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:white;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:16px;overflow:hidden;}
+.ins-item{padding:10px 14px;display:flex;align-items:flex-start;gap:9px;border-right:1px solid #f1f5f9;}
+.ins-item:last-child{border-right:none;}
+.ins-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.ins-dot.bl{background:#2563eb;}.ins-dot.gr{background:#059669;}.ins-dot.am{background:#d97706;}.ins-dot.rd{background:#dc2626;}
+.ins-lbl{font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:3px;}
+.ins-txt{font-size:11px;color:#1e293b;font-weight:700;line-height:1.4;}
 .badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,255,255,.25);margin-top:4px;}
 .cg{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:16px;}
 .card{background:white;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
@@ -113,7 +123,7 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
 <input type="radio" name="tab" id="r-c" hidden>
 <input type="radio" name="tab" id="r-m" hidden>
 <input type="radio" name="tab" id="r-j" hidden>
-<div class="header"><div><span class="dot"></span><span style="font-size:15px;font-weight:800;">알리고 운영 현황</span></div><span class="chip">갱신: 2026. 6. 23.</span></div>
+<div class="header"><div><span class="dot"></span><span style="font-size:15px;font-weight:800;">알리고 운영 현황</span></div><span class="chip">갱신: 2026. 6. 29.</span></div>
 <div class="tabs"><label class="tab-btn" for="r-s">📊 핵심 요약</label><label class="tab-btn" for="r-c">📈 전환 성과</label><label class="tab-btn" for="r-m">⚙️ 지표 관리</label><label class="tab-btn" for="r-j">🎯 Jira 등록</label></div>
 <div id="toast" class="toast"></div>
 <div class="page" id="pg-s">
@@ -177,9 +187,15 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
 <div class="kc bl"><div class="kl">총 문의 건수</div><div><span class="kv" id="kv-weekly-total">—</span><span class="ku">건</span></div><div class="ks" id="ks-weekly-total">계산 중...</div></div>
 <div class="kc gr"><div class="kl">응답 완료율</div><div><span class="kv" id="kv-response-rate">—</span><span class="ku">%</span></div><div class="badge" id="badge-response-rate">-</div></div>
 <div class="kc am"><div class="kl">평균 응답 시간</div><div><span class="kv" id="kv-avg-rt">—</span><span class="ku">h</span></div><div class="ks" id="ks-avg-rt">계산 중...</div></div>
-<div class="kc rd"><div class="kl">미처리 문의</div>
-<div><span class="kv"><span id="kv-unhandled">155</span></span><span class="ku">건</span></div>
-<div class="ks"><span id="ks-unhandled">최근 30일 기준</span></div></div>
+<div class="kc rd"><div class="kl">중복 문의 고객</div>
+<div><span class="kv" id="kv-dup">—</span><span class="ku">명</span></div>
+<div class="ks" id="ks-dup">계산 중...</div></div>
+</div>
+<div class="ins-bar">
+  <div class="ins-item"><div class="ins-dot bl"></div><div><div class="ins-lbl">총 문의 건수</div><div class="ins-txt" id="insight-total">계산 중...</div></div></div>
+  <div class="ins-item"><div class="ins-dot gr"></div><div><div class="ins-lbl">응답 완료율</div><div class="ins-txt" id="insight-rate">계산 중...</div></div></div>
+  <div class="ins-item"><div class="ins-dot am"></div><div><div class="ins-lbl">평균 응답 시간</div><div class="ins-txt" id="insight-rt">계산 중...</div></div></div>
+  <div class="ins-item"><div class="ins-dot rd"></div><div><div class="ins-lbl">중복 문의 고객</div><div class="ins-txt" id="insight-dup">계산 중...</div></div></div>
 </div>
 
 <div class="sec-label">트렌드 (최근 12주)</div><div class="cg"><div class="card"><div class="ct">주간 문의 건수</div><div id="tC" style="margin-top:4px"><div style="display:flex;align-items:flex-end;gap:3px;height:90px;padding-top:4px"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">470</div><div style="width:100%;height:55px;background:#93c5fd;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-06</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">602</div><div style="width:100%;height:70px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-13</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">570</div><div style="width:100%;height:66px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-20</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">526</div><div style="width:100%;height:61px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-27</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">521</div><div style="width:100%;height:61px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-04</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">539</div><div style="width:100%;height:63px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-11</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">550</div><div style="width:100%;height:64px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-18</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">342</div><div style="width:100%;height:40px;background:#93c5fd;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-25</div></div></div><div style="margin-top:6px;font-size:10px;color:#f59e0b">— 평균 515건</div></div></div><div class="card"><div class="ct">문의 유형 Top 5</div><div id="t5"><div class="br"><div class="bl2">승인취소/환불</div><div class="bt"><div class="bf" style="width:100%"></div></div><div class="bc">571건</div></div><div class="br"><div class="bl2">세금계산서</div><div class="bt"><div class="bf" style="width:95%"></div></div><div class="bc">545건</div></div><div class="br"><div class="bl2">엑셀등록대행</div><div class="bt"><div class="bf" style="width:79%"></div></div><div class="bc">450건</div></div><div class="br"><div class="bl2">계정관리</div><div class="bt"><div class="bf" style="width:67%"></div></div><div class="bc">382건</div></div><div class="br"><div class="bl2">발신번호관리</div><div class="bt"><div class="bf" style="width:62%"></div></div><div class="bc">356건</div></div></div></div><div class="card"><div class="ct">응답 완료율</div><div id="dC" style="margin-top:4px"><div style="display:flex;flex-direction:column;align-items:center;padding:8px 0"><div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(#22c55e 346deg,#ef4444 346deg);display:flex;align-items:center;justify-content:center"><div style="width:68px;height:68px;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:18px;font-weight:900;color:#1e293b">96%</div></div></div><div style="margin-top:8px;font-size:11px;color:#64748b"><span id="donut-label">완료 3,973건 / 미처리 155건</span></div></div></div><div style="text-align:center;margin-top:8px;font-size:11px;color:#64748b;"><span style="color:#22c55e;margin-right:12px;">● 완료</span><span style="color:#ef4444;">● 미처리</span></div></div></div>
@@ -451,6 +467,9 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
   <div id="monthlyTrendContainer"></div>
 </div>
 
+<!-- ── 이번 주 핵심 신호 요약 ── -->
+<div id="weekly-signal-box" style="margin-top:20px;margin-bottom:16px;"></div>
+
 <!-- ── 스프린트 운영 과제 도출 매트릭스 ── -->
 <div style="margin-top:20px;margin-bottom:16px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -629,15 +648,15 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
     </div>
   </div>
   <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:3px;" id="j-story-title-01">인증 거절 사유별 재안내 문자 작성·발송</div>
-  <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.5;" id="j-story-desc-01">사유별 표준 재안내 문자 템플릿 작성 후 대상 397건에 발송</div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.5;" id="j-story-desc-01">사유별 표준 재안내 문자 템플릿 작성 후 대상 412건에 발송</div>
   <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5;">
-    📊 <b>진단:</b> 재안내 가능한 인증 거절·반려 397건, 거절 사유가 7~8개 유형에 집중
+    📊 <b>진단:</b> 재안내 가능한 인증 거절·반려 412건, 거절 사유가 6~7개 유형에 집중
   </div>
   <div style="display:flex;flex-direction:column;gap:5px;padding-top:10px;border-top:1.5px dashed #e2e8f0;" id="j-story-subs-01">
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 통신서비스 이용증명원 관련 거절(팩스 미수신·발급 1개월 경과) 재안내 문자 템플릿 작성</span><span id="j-sub-01-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 이용증명원 사유 거절 27건으로 단일 사유 중 최다, 표준 문구로 재신청 안내 가능</div></div>
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 사업자등록증·증명 위변조 QR·세무서장 직인 미확인 거절 재안내 문자 템플릿 작성</span><span id="j-sub-01-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: QR·직인 사유 거절 34건, 서류 재발급 방법이 동일해 1개 템플릿으로 커버 가능</div></div>
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 주민번호 마스킹 누락·재직증명서 미비 거절 재안내 문자 템플릿 작성</span><span id="j-sub-01-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 마스킹·재직증명서 사유 16건, 보완 기준이 명확해 표준화 용이</div></div>
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">④ 작성한 사유별 템플릿을 대상 397건에 매칭해 재안내 문자 발송</span><span id="j-sub-01-4" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재안내 가능 397건 전체가 표준 문자 발송으로 재신청 전환 유도 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 발신번호 통신서비스 이용증명원 관련 거절(팩스 미수신·발급 1개월 경과) 재안내 문자 템플릿 작성</span><span id="j-sub-01-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 이용증명원 사유 거절 100건으로 발신번호 단일 사유 중 최다, 표준 문구로 재신청 안내 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 사업자등록증 위변조 QR·세무서장 직인 미확인 반려 재안내 문자 템플릿 작성</span><span id="j-sub-01-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: QR·직인 사유 반려 101건, 서류 재발급 방법이 동일해 1개 템플릿으로 커버 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 발신번호 명의자 선택 오류·재직증명서 미비 거절 재안내 문자 템플릿 작성</span><span id="j-sub-01-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 명의자 오류 56건·재직증명서 42건, 보완 기준이 명확해 표준화 용이</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">④ 작성한 사유별 템플릿을 재안내 가능 412건에 매칭해 재안내 문자 발송</span><span id="j-sub-01-4" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재안내 가능 412건(발신번호 256+사업자 156) 전체가 표준 문자 발송으로 재신청 전환 유도 가능</div></div>
   </div>
   <div id="j-result-01" style="margin-top:6px;font-size:10px;"></div>
 </div>
@@ -659,12 +678,12 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
   <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:3px;" id="j-story-title-02">응답 지연 반복 유발 유형 표준 답변 구축</div>
   <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.5;" id="j-story-desc-02">반복 지연 유형 표준 답변 문안 작성 및 응답 가이드 문서화</div>
   <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5;">
-    📊 <b>진단:</b> 24시간 초과 응답 1,512건 중 1,305건(86%)이 스마트문자 문의에 집중 · 피크 응답 25.6h
+    📊 <b>진단:</b> 24시간 초과 응답 1,551건 중 1,336건(86%)이 스마트문자 문의에 집중 · 피크 응답 25.5h
   </div>
   <div style="display:flex;flex-direction:column;gap:5px;padding-top:10px;border-top:1.5px dashed #e2e8f0;" id="j-story-subs-02">
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 24시간 초과 응답 1위 스마트문자 문의의 세부 질문 유형 추출</span><span id="j-sub-02-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 초과 1,512건 중 1,305건(86%)이 이 유형, 세분화 시 표준화 대상 도출 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 24시간 초과 응답 1위 스마트문자 문의의 세부 질문 유형 추출</span><span id="j-sub-02-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 초과 1,551건 중 1,336건(86%)이 이 유형, 세분화 시 표준화 대상 도출 가능</div></div>
     <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 추출된 스마트문자 반복 질문에 대한 표준 답변 문안 작성</span><span id="j-sub-02-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 동일 질문 반복으로 표준 답변 1세트가 다수 문의에 재사용 가능</div></div>
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 엑셀파일 등록대행·환불문의 지연 유형 표준 답변 템플릿 작성</span><span id="j-sub-02-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 각각 73건·59건 초과 발생, 절차 안내형이라 템플릿화 적합</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 엑셀파일 등록대행·환불문의 지연 유형 표준 답변 템플릿 작성</span><span id="j-sub-02-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 각각 77건·60건 초과 발생, 절차 안내형이라 템플릿화 적합</div></div>
     <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">④ 작성한 표준 답변을 답변 도구에서 바로 호출하도록 응답 가이드 문서로 정리</span><span id="j-sub-02-4" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 초과 응답 86% 집중 유형의 답변을 도구에서 즉시 불러오도록 문서화 필요</div></div>
   </div>
   <div id="j-result-02" style="margin-top:6px;font-size:10px;"></div>
@@ -687,12 +706,12 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
   <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:3px;" id="j-story-title-03">재문의 Top 유형 1회 완결 스크립트 작성</div>
   <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.5;" id="j-story-desc-03">후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 및 FAQ 반영</div>
   <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5;">
-    📊 <b>진단:</b> 30일 내 재문의 사용자 1,115명(38.8%), 재문의도 스마트문자 문의에 집중
+    📊 <b>진단:</b> 30일 내 재문의 사용자 1,158명(38.7%), 재문의도 스마트문자 문의에 집중
   </div>
   <div style="display:flex;flex-direction:column;gap:5px;padding-top:10px;border-top:1.5px dashed #e2e8f0;" id="j-story-subs-03">
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 재문의 사용자 문의 중 1회로 끝나지 않은 스마트문자 문의 미완결 패턴 분석</span><span id="j-sub-03-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 사용자 문의 중 스마트문자가 최다, 미완결 패턴이 스크립트 기초</div></div>
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 자주 누락되는 후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성</span><span id="j-sub-03-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의율 38.8%(1,115/2,876), 선제 안내로 2차 문의 유발 요소 제거 가능</div></div>
-    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 엑셀파일 등록대행·이메일 문의 재문의 유형 완결 스크립트 작성</span><span id="j-sub-03-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 사용자 문의 411건·244건 발생, 절차 누락이 재문의 원인</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">① 재문의 사용자 문의 중 1회로 끝나지 않은 스마트문자 문의 미완결 패턴 분석</span><span id="j-sub-03-1" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 사용자 문의 중 스마트문자 3,948건으로 최다, 미완결 패턴이 스크립트 기초</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">② 자주 누락되는 후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성</span><span id="j-sub-03-2" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의율 38.7%(1,158/2,992), 선제 안내로 2차 문의 유발 요소 제거 가능</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">③ 엑셀파일 등록대행·이메일 문의 재문의 유형 완결 스크립트 작성</span><span id="j-sub-03-3" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 사용자 문의 422건·248건 발생, 절차 누락이 재문의 원인</div></div>
     <div style="display:flex;flex-direction:column;gap:2px;padding:7px 9px;background:#f8fafc;border-radius:7px;margin-bottom:5px"><div style="display:flex;align-items:flex-start;gap:7px;"><span style="font-size:11px;color:#374151;font-weight:600;flex:1;">④ 작성한 완결 스크립트를 FAQ·표준 답변에 반영하는 업데이트안 정리</span><span id="j-sub-03-4" style="font-size:10px;font-weight:700;"></span></div><div style="font-size:10px;color:#94a3b8;line-height:1.4;">이유: 재문의 Top 유형을 1회 답변에 통합해 재문의 감소 근거 확보</div></div>
   </div>
   <div id="j-result-03" style="margin-top:6px;font-size:10px;"></div>
@@ -1063,14 +1082,16 @@ function buildAgentPerf(b12S, lwS) {
   });
 }
 
-// ── 저번주 날짜 계산 ──
+// ── 저번주 날짜 계산 (일~토 기준) ──
 function getLastWeekRange() {
   var today = new Date();
-  var dow = today.getDay() || 7; // Mon=1 … Sun=7
-  var mon = new Date(today); mon.setDate(today.getDate() - dow - 6);
-  var sun = new Date(mon);   sun.setDate(mon.getDate() + 6);
+  var dow = today.getDay(); // 0=일, 1=월 … 6=토
+  // 지난 토요일까지 며칠: 오늘이 토요일(6)이면 7일 전, 그 외 (dow+1)%7
+  var daysToSat = (dow + 1) % 7 || 7;
+  var sat = new Date(today); sat.setDate(today.getDate() - daysToSat);
+  var sun = new Date(sat);   sun.setDate(sat.getDate() - 6);
   function fmt(d) { return d.toISOString().slice(0, 10); }
-  return {start: fmt(mon), end: fmt(sun)};
+  return { start: fmt(sun), end: fmt(sat) }; // 일요일 시작 ~ 토요일 종료
 }
 
 // ── data.js fetch & 전환 분석 초기화 ──
@@ -1081,6 +1102,8 @@ function initConvData() {
   try {
     var records = (window._PRELOADED && window._PRELOADED.cs) ? window._PRELOADED.cs : [];
     if (records.length === 0) throw new Error('data.js 미로드');
+    // 채팅 데이터 (운영 현황 지표에만 합산 — 전환 성과는 게시판 데이터만)
+    var chatRecords = (window._CHAT_DATA || []);
 
     var lw = getLastWeekRange();
     // 전주 날짜 계산 (lw 기준 7일 전)
@@ -1096,7 +1119,7 @@ function initConvData() {
     agentPerf = buildAgentPerf(prevStats, lwStats);  // 전주 대비 비교
 
     // ── 전주 비교 KPI 카드 업데이트 ──
-    updateKPIBadges(records, lw);
+    updateKPIBadges(records, lw, chatRecords);
 
     // 기간 라벨 업데이트
     var lwLabel = document.getElementById('lw-period-label');
@@ -1115,40 +1138,68 @@ function initConvData() {
 }
 
 // ── 전주 비교 & KPI 카드 배지 업데이트 ──
-function updateKPIBadges(records, lw) {
-  // 전주 날짜 범위 계산 (기준주 lw 기준 7일 전)
+function updateKPIBadges(records, lw, chatRecords) {
+  chatRecords = chatRecords || [];
   function addDays(dateStr, days) {
     var d = new Date(dateStr); d.setDate(d.getDate() + days);
     return d.toISOString().slice(0, 10);
   }
-  var pw = { start: addDays(lw.start, -7), end: addDays(lw.end, -7) };
+  // 노이즈 문의 제외: 광고 포함 / CS 답변 회신 메일 / 협업제안
+  records = records.filter(function(r) {
+    var c = String(r['문의내용'] || '');
+    return c.indexOf('광고') < 0
+        && c.indexOf('RE: 알리고 고객센터에서 답변드립니다') < 0
+        && c.indexOf('협업제안') < 0;
+  });
+  // CS 전환 기준: lw(전주, 06/21~06/27) 문의 기준 · 14일 이내 전환
+  // cur  = 전주 문의 (lw) → 14일 이내 전환
+  // prev = 전전주 문의 (lw 기준 -7일) → 14일 이내 전환 (비교용)
+  var cur  = { start: lw.start, end: lw.end };
+  var prev = { start: addDays(lw.start, -7), end: addDays(lw.end, -7) };
 
-  // 기준주(이번주/저번주) 집계
-  var cur  = {total:0, charge:0, caller:0, send:0, biz:0};
-  // 전주 집계 (비교 대상)
-  var prev = {total:0, charge:0, caller:0, send:0, biz:0};
+  // 각 지표별로 별도 분모 (아직 전환 안 한 고객만)
+  var curBucket  = {chargeTotal:0, charge:0, callerTotal:0, caller:0, sendTotal:0, send:0, bizTotal:0, biz:0};
+  var prevBucket = {chargeTotal:0, charge:0, callerTotal:0, caller:0, sendTotal:0, send:0, bizTotal:0, biz:0};
 
   records.forEach(function(r) {
     var inqD = (r['문의 일시'] || '').slice(0, 10);
     if (!inqD) return;
 
     function countConv(bucket) {
-      bucket.total++;
       var chargeD = (r['첫 충전일시']        || '').slice(0, 10);
       var callerD = (r['발신번호 인증 일시']  || '').slice(0, 10);
       var sendD   = (r['첫 발송 일시']        || '').slice(0, 10);
       var bizD    = (r['사업자 인증 일시']     || '').slice(0, 10);
-      if (chargeD && chargeD !== '-' && chargeD >= inqD) bucket.charge++;
-      if (callerD && callerD !== '-' && callerD >= inqD) bucket.caller++;
-      if (sendD   && sendD   !== '-' && sendD   >= inqD) bucket.send++;
-      if (bizD    && bizD    !== '-' && bizD    >= inqD) bucket.biz++;
+      var inq14   = addDays(inqD, 14);
+      // 충전: 문의 시점에 아직 충전 안 한 고객만 분모에 포함
+      if (!chargeD || chargeD === '-' || chargeD >= inqD) {
+        bucket.chargeTotal++;
+        if (chargeD && chargeD !== '-' && chargeD <= inq14) bucket.charge++;
+      }
+      // 발신번호: 문의 시점에 아직 등록 안 한 고객만
+      if (!callerD || callerD === '-' || callerD >= inqD) {
+        bucket.callerTotal++;
+        if (callerD && callerD !== '-' && callerD <= inq14) bucket.caller++;
+      }
+      // 첫발송: 문의 시점에 아직 발송 안 한 고객만
+      if (!sendD || sendD === '-' || sendD >= inqD) {
+        bucket.sendTotal++;
+        if (sendD && sendD !== '-' && sendD <= inq14) bucket.send++;
+      }
+      // 사업자: 문의 시점에 아직 인증 안 한 고객만
+      if (!bizD || bizD === '-' || bizD >= inqD) {
+        bucket.bizTotal++;
+        if (bizD && bizD !== '-' && bizD <= inq14) bucket.biz++;
+      }
     }
 
-    // 기준주 집계
-    if (lw && inqD >= lw.start && inqD <= lw.end) countConv(cur);
-    // 전주 집계
-    if (inqD >= pw.start && inqD <= pw.end) countConv(prev);
+    if (inqD >= cur.start  && inqD <= cur.end)  countConv(curBucket);
+    if (inqD >= prev.start && inqD <= prev.end) countConv(prevBucket);
   });
+
+  // 변수명 맞추기
+  var curObj  = curBucket;
+  var prevObj = prevBucket;
 
   // 12주 평균 계산 (전환 성과 배지 + 전문가 진단 공용)
   var avg12 = {total:0, charge:0, caller:0, send:0, biz:0};
@@ -1162,23 +1213,23 @@ function updateKPIBadges(records, lw) {
     var callerD = (r['발신번호 인증 일시']  || '').slice(0, 10);
     var sendD   = (r['첫 발송 일시']        || '').slice(0, 10);
     var bizD    = (r['사업자 인증 일시']     || '').slice(0, 10);
-    if (chargeD && chargeD !== '-' && chargeD >= inqD12) avg12.charge++;
-    if (callerD && callerD !== '-' && callerD >= inqD12) avg12.caller++;
-    if (sendD   && sendD   !== '-' && sendD   >= inqD12) avg12.send++;
-    if (bizD    && bizD    !== '-' && bizD    >= inqD12) avg12.biz++;
+    var inq14D  = addDays(inqD12, 14);
+    if (chargeD && chargeD !== '-' && chargeD >= inqD12 && chargeD <= inq14D) avg12.charge++;
+    if (callerD && callerD !== '-' && callerD >= inqD12 && callerD <= inq14D) avg12.caller++;
+    if (sendD   && sendD   !== '-' && sendD   >= inqD12 && sendD   <= inq14D) avg12.send++;
+    if (bizD    && bizD    !== '-' && bizD    >= inqD12 && bizD    <= inq14D) avg12.biz++;
   });
 
   function p(n, d) { return d > 0 ? Math.round(n / d * 1000) / 10 : 0; }
 
-  var prevT  = prev.total  || 1;
   var avg12T = avg12.total || 1;
 
-  // 기준값: 12주 평균 / 배지: 전주 vs 12주 평균 비교
+  // 메인 숫자: 전전주 문의 기준 14일 이내 전환 / 배지: 12주 평균 대비 (지표별 개별 분모)
   var metrics = [
-    {key:'charge', avg: p(avg12.charge, avg12T), prev: p(prev.charge, prevT), avgN: avg12.charge},
-    {key:'caller', avg: p(avg12.caller, avg12T), prev: p(prev.caller, prevT), avgN: avg12.caller},
-    {key:'send',   avg: p(avg12.send,   avg12T), prev: p(prev.send,   prevT), avgN: avg12.send},
-    {key:'biz',    avg: p(avg12.biz,    avg12T), prev: p(prev.biz,    prevT), avgN: avg12.biz}
+    {key:'charge', cur: p(curObj.charge, curObj.chargeTotal||1), curN: curObj.charge, curD: curObj.chargeTotal||0, avg: p(avg12.charge, avg12T)},
+    {key:'caller', cur: p(curObj.caller, curObj.callerTotal||1), curN: curObj.caller, curD: curObj.callerTotal||0, avg: p(avg12.caller, avg12T)},
+    {key:'send',   cur: p(curObj.send,   curObj.sendTotal||1),   curN: curObj.send,   curD: curObj.sendTotal||0,   avg: p(avg12.send,   avg12T)},
+    {key:'biz',    cur: p(curObj.biz,    curObj.bizTotal||1),    curN: curObj.biz,    curD: curObj.bizTotal||0,    avg: p(avg12.biz,    avg12T)}
   ];
 
   metrics.forEach(function(m) {
@@ -1186,24 +1237,22 @@ function updateKPIBadges(records, lw) {
     var ksEl  = document.getElementById('ks-' + m.key);
     var bdgEl = document.getElementById('kpi-badge-' + m.key);
 
-    if (avg12.total > 0 && kvEl) kvEl.textContent = m.avg;
-    if (avg12.total > 0 && ksEl) ksEl.textContent = m.avgN + '건 전환 / ' + avg12.total + '건 (12주)';
+    if (m.curD > 0 && kvEl) kvEl.textContent = m.cur;
+    if (m.curD > 0 && ksEl) ksEl.textContent = m.curN + '건 전환 / ' + m.curD + '건';
 
     if (bdgEl) {
-      var gap = Math.round((m.prev - m.avg) * 10) / 10;
+      var gap = Math.round((m.cur - m.avg) * 10) / 10;
       var gapStr = gap >= 0 ? '▲+' + gap + '%p' : '▼' + Math.abs(gap) + '%p';
-      bdgEl.textContent = '전주 ' + m.prev + '% ' + gapStr;
+      bdgEl.textContent = '12주 평균 ' + m.avg + '% ' + gapStr;
     }
   });
 
-  // 기간 배지 업데이트 (기준주 · 비교: 전주)
+  // 기간 배지 업데이트 (전전주 문의 기준)
   var periodBadge = document.getElementById('badge-period-0');
-  if (periodBadge && lw) {
+  if (periodBadge && cur) {
     function fmtD(d) { return d.slice(5).replace('-', '/'); }
-    var curPeriod  = fmtD(lw.start) + '~' + fmtD(lw.end);
-    var prevPeriod = fmtD(pw.start) + '~' + fmtD(pw.end);
-    var prevPeriod = fmtD(pw.start) + '~' + fmtD(pw.end);
-    periodBadge.textContent = '📅 12주 평균 기준 | 전주 ' + prevPeriod + ' 대비';
+    var curPeriod = fmtD(cur.start) + '~' + fmtD(cur.end);
+    periodBadge.textContent = '📅 ' + curPeriod + ' 문의 기준 · 14일 이내 전환';
   }
 
   // ── 운영 현황 지표 → 전주 기준 실제 데이터 업데이트 ──
@@ -1211,40 +1260,118 @@ function updateKPIBadges(records, lw) {
     function fmtS(d) { return d.slice(5).replace('-', '/'); }
     var periodStr = fmtS(lw.start) + '~' + fmtS(lw.end);
 
-    // 전주 레코드 필터
-    var lwRecs = records.filter(function(r) {
+    // 채팅 데이터를 게시판 데이터와 합산 (운영 현황 지표 전용, 부재중 제외)
+    var chatActive = chatRecords.filter(function(r) { return r['답변 상태'] !== '부재중'; });
+    var allRecs = records.concat(chatActive);
+
+    // 전주 레코드 필터 (게시판 + 채팅 합산) — 중복/채널 분류용으로 유지
+    var lwRecs = allRecs.filter(function(r) {
       var d = (r['문의 일시'] || '').slice(0, 10);
       return d >= lw.start && d <= lw.end;
     });
-    var lwTotal = lwRecs.length;
 
-    // 응답 완료율 (답변완료 / 전체)
-    var lwDone = lwRecs.filter(function(r) { return r['답변 상태'] === '답변완료'; }).length;
-    var lwRate = lwTotal > 0 ? Math.round(lwDone / lwTotal * 1000) / 10 : 0;
+    // 전전주 레코드
+    var pw2Start = addDays(lw.start, -7), pw2End = addDays(lw.end, -7);
+    var pw2Recs = allRecs.filter(function(r) {
+      var d = (r['문의 일시'] || '').slice(0, 10);
+      return d >= pw2Start && d <= pw2End;
+    });
+
+    // ── 슬랙 techbot 데이터 우선 사용 (문의 건수 / 응답시간 / 미답변) ──
+    var slackWeekly = window._SLACK_CS_WEEKLY || [];
+    function findSlackWk(start) {
+      return slackWeekly.find(function(w) { return w.start === start; }) || null;
+    }
+    var slackLw  = findSlackWk(lw.start);
+    var slackPw2 = findSlackWk(pw2Start);
+
+    // 총 문의 건수: 슬랙 우선, 없으면 data.js 합산
+    var lwTotal  = slackLw  ? slackLw.total  : lwRecs.length;
+    var pw2Total = slackPw2 ? slackPw2.total : pw2Recs.length;
+
+    // 12주 평균: 슬랙 techbot 계산값 우선
+    var avg12Total;
+    if (slackLw && slackLw.avg12) {
+      avg12Total = slackLw.avg12;
+    } else {
+      var w12Total = 0;
+      for (var wi12 = 1; wi12 <= 12; wi12++) {
+        var ws12 = addDays(lw.start, -(wi12 * 7)), we12 = addDays(lw.end, -(wi12 * 7));
+        w12Total += allRecs.filter(function(r) {
+          var d = (r['문의 일시'] || '').slice(0, 10); return d >= ws12 && d <= we12;
+        }).length;
+      }
+      avg12Total = Math.round(w12Total / 12);
+    }
+
+    // 응답 완료율: 슬랙 미답변 기준
+    var lwDone, lwUnhandled, lwRate;
+    if (slackLw) {
+      lwUnhandled = slackLw.unanswered;
+      lwDone      = slackLw.total - slackLw.unanswered;
+      lwRate      = Math.round(lwDone / slackLw.total * 1000) / 10;
+    } else {
+      lwDone      = lwRecs.filter(function(r) { return r['답변 상태'] === '답변완료'; }).length;
+      lwUnhandled = lwRecs.filter(function(r) {
+        var s = r['답변 상태'] || '';
+        return s === '답변대기중' || s === '답변중' || s === '중간답변';
+      }).length;
+      lwRate = lwTotal > 0 ? Math.round(lwDone / lwTotal * 1000) / 10 : 0;
+    }
     var rateGrade = lwRate >= 95 ? '양호' : lwRate >= 85 ? '보통' : '주의';
 
-    // 미처리 (답변대기중 + 답변중 + 중간답변)
-    var lwUnhandled = lwRecs.filter(function(r) {
-      var s = r['답변 상태'] || '';
-      return s === '답변대기중' || s === '답변중' || s === '중간답변';
-    }).length;
+    // 중복 문의 고객 (같은 아이디가 전주에 2회 이상 문의, 비회원 제외)
+    var idCnt = {};
+    lwRecs.forEach(function(r) {
+      var id = r['아이디'] || '';
+      if (!id || id === '' || id === '-' || id === '비회원') return;
+      idCnt[id] = (idCnt[id] || 0) + 1;
+    });
+    var dupCustomers = Object.keys(idCnt).filter(function(id) { return idCnt[id] >= 2; });
+    var dupCustCount = dupCustomers.length;
+    var dupInqCount  = dupCustomers.reduce(function(acc, id) { return acc + idCnt[id]; }, 0);
 
-    // 평균 응답 시간 (답변완료 건만)
+    // 평균 응답 시간 — 슬랙 techbot 값 우선
+    function bizHours(startStr, endStr) {
+      var BIZ_S = 9, BIZ_E = 18;
+      var s = new Date(startStr), e = new Date(endStr);
+      if (!s || !e || e <= s) return 0;
+      var ms = 0;
+      var cur = new Date(s);
+      while (cur < e) {
+        var dayS = new Date(cur); dayS.setHours(BIZ_S, 0, 0, 0);
+        var dayE = new Date(cur); dayE.setHours(BIZ_E, 0, 0, 0);
+        var lo = Math.max(cur.getTime(), dayS.getTime());
+        var hi = Math.min(e.getTime(), dayE.getTime());
+        if (hi > lo) ms += hi - lo;
+        cur.setDate(cur.getDate() + 1);
+        cur.setHours(BIZ_S, 0, 0, 0);
+      }
+      return ms / 3600000;
+    }
     var rts = lwRecs
-      .filter(function(r) { return r['답변 상태'] === '답변완료' && r['답변 일시']; })
-      .map(function(r) { return (new Date(r['답변 일시']) - new Date(r['문의 일시'])) / 3600000; })
-      .filter(function(h) { return h >= 0 && h < 240; });
-    var avgH = rts.length ? Math.round(rts.reduce(function(a, b) { return a + b; }, 0) / rts.length * 10) / 10 : 0;
-    var rtGrade = avgH <= 12 ? '빠름' : avgH <= 24 ? '보통' : '느림';
+      .filter(function(r) { return r['답변 상태'] === '답변완료' && r['답변 일시'] && r['문의 일시']; })
+      .map(function(r) { return bizHours(r['문의 일시'], r['답변 일시']); })
+      .filter(function(h) { return h >= 0 && h < 90; });
+    var avgH = slackLw ? slackLw.avg_rt
+             : (rts.length ? Math.round(rts.reduce(function(a, b) { return a + b; }, 0) / rts.length * 10) / 10 : 0);
+    var rtGrade = avgH <= 4 ? '빠름' : avgH <= 9 ? '보통' : '느림';
 
     // DOM 업데이트
     var bp1 = document.getElementById('badge-period-1');
     if (bp1) bp1.textContent = '전주 ' + periodStr;
 
+    var lwBoard = lwRecs.filter(function(r){ return r['문의 채널'] === '게시판'; }).length;
+    var lwChat  = lwRecs.filter(function(r){ return r['문의 채널'] !== '게시판'; }).length;
+
     var kvWt = document.getElementById('kv-weekly-total');
     if (kvWt) kvWt.textContent = lwTotal.toLocaleString();
     var ksWt = document.getElementById('ks-weekly-total');
-    if (ksWt) ksWt.textContent = periodStr + ' 기준';
+    if (slackLw) {
+      if (ksWt) ksWt.textContent = '슬랙 리포트 기준 · 게시판 ' + lwBoard + ' · 채팅 ' + lwChat + '건(raw)';
+    } else {
+      if (ksWt) ksWt.textContent = '게시판 ' + lwBoard + ' · 채팅 ' + lwChat + '건';
+    }
 
     var kvRr = document.getElementById('kv-response-rate');
     if (kvRr) kvRr.textContent = lwRate;
@@ -1254,12 +1381,93 @@ function updateKPIBadges(records, lw) {
     var kvArt = document.getElementById('kv-avg-rt');
     if (kvArt) kvArt.textContent = avgH;
     var ksArt = document.getElementById('ks-avg-rt');
-    if (ksArt) ksArt.textContent = '중앙값 · 완료 ' + rts.length + '건 기준';
+    if (ksArt) ksArt.textContent = '운영시간(9-18시) 기준 · 완료 ' + rts.length + '건';
 
-    var kvUh = document.getElementById('kv-unhandled');
-    if (kvUh) kvUh.textContent = lwUnhandled;
-    var ksUh = document.getElementById('ks-unhandled');
-    if (ksUh) ksUh.textContent = '전주 ' + periodStr + ' 기준';
+    var kvDup = document.getElementById('kv-dup');
+    if (kvDup) kvDup.textContent = dupCustCount.toLocaleString();
+    var ksDup = document.getElementById('ks-dup');
+    if (ksDup) ksDup.textContent = dupInqCount + '건 중복 발생 · ' + periodStr;
+
+    // ── 전전주 비교 데이터 계산 — 슬랙 데이터 우선 ──
+    var pw2Done, pw2Rate, pw2AvgH;
+    if (slackPw2) {
+      pw2Done  = slackPw2.total - slackPw2.unanswered;
+      pw2Rate  = Math.round(pw2Done / slackPw2.total * 1000) / 10;
+      pw2AvgH  = slackPw2.avg_rt;
+    } else {
+      pw2Done  = pw2Recs.filter(function(r) { return r['답변 상태'] === '답변완료'; }).length;
+      pw2Rate  = pw2Total > 0 ? Math.round(pw2Done / pw2Total * 1000) / 10 : 0;
+      var pw2Rts = pw2Recs
+        .filter(function(r) { return r['답변 상태'] === '답변완료' && r['답변 일시'] && r['문의 일시']; })
+        .map(function(r) { return bizHours(r['문의 일시'], r['답변 일시']); })
+        .filter(function(h) { return h >= 0 && h < 90; });
+      pw2AvgH = pw2Rts.length ? Math.round(pw2Rts.reduce(function(a,b){return a+b;},0) / pw2Rts.length * 10) / 10 : 0;
+    }
+
+    var pw2IdCnt = {};
+    pw2Recs.forEach(function(r) {
+      var id = r['아이디'] || '';
+      if (!id || id === '' || id === '-' || id === '비회원') return;
+      pw2IdCnt[id] = (pw2IdCnt[id] || 0) + 1;
+    });
+    var pw2DupCount = Object.keys(pw2IdCnt).filter(function(id){ return pw2IdCnt[id] >= 2; }).length;
+
+    // ── 인사이트 생성 ──
+    // 총 문의 인사이트
+    var totalDiff = lwTotal - pw2Total;
+    var insTotal;
+    if (pw2Total === 0) {
+      insTotal = '— 전전주 데이터 없음';
+    } else if (totalDiff === 0) {
+      insTotal = '→ 전전주와 동일 | 12주 평균 ' + avg12Total + '건';
+    } else {
+      var totalWord = totalDiff > 0 ? '증가' : '감소';
+      insTotal = (totalDiff > 0 ? '↑' : '↓') + ' 전전주 대비 ' + Math.abs(totalDiff) + '건 ' + totalWord + ' | 12주 평균 ' + avg12Total + '건';
+    }
+
+    // 응답 완료율 인사이트
+    var rateDiff = Math.round((lwRate - pw2Rate) * 10) / 10;
+    var rateInsight;
+    if (lwRate < 85) rateInsight = '⚠️ 응답률 저조 — 처리 부하 점검 필요';
+    else if (lwRate >= 98) rateInsight = '✅ 최우수 응답률 유지 중';
+    else if (Math.abs(rateDiff) < 0.1) rateInsight = '→ 전전주와 동일 (' + lwRate + '%)';
+    else {
+      var rateWord = rateDiff > 0 ? '개선' : '하락';
+      rateInsight = (rateDiff > 0 ? '↑' : '↓') + ' 전전주 대비 ' + (rateDiff > 0 ? '+' : '') + rateDiff + '%p ' + rateWord;
+    }
+
+    // 평균 응답 시간 인사이트
+    var rtDiff = Math.round((avgH - pw2AvgH) * 10) / 10;
+    var rtInsight;
+    if (avgH === 0) rtInsight = '—';
+    else if (avgH <= 1) rtInsight = '✅ 1시간 내 응답 — 최우수';
+    else if (avgH > 9)  rtInsight = '⚠️ 운영 1일 초과 — 처리 속도 점검';
+    else if (Math.abs(rtDiff) < 0.1) rtInsight = '→ 전전주와 동일 (' + avgH + 'h / ' + rtGrade + ')';
+    else {
+      var rtWord = rtDiff < 0 ? '단축 — 개선' : '증가 — 악화';
+      rtInsight = (rtDiff < 0 ? '↓' : '↑') + ' 전전주 대비 ' + (rtDiff > 0 ? '+' : '') + rtDiff + 'h ' + rtWord;
+    }
+
+    // 중복 문의 인사이트
+    var dupRate = lwTotal > 0 ? Math.round(dupCustCount / lwTotal * 1000) / 10 : 0;
+    var dupDiff = dupCustCount - pw2DupCount;
+    var dupInsight;
+    if (dupRate >= 25) dupInsight = '⚠️ 전체 ' + dupRate + '% 중복 — 미해결 이슈 확인';
+    else if (dupDiff === 0) dupInsight = '→ 전전주와 동일 (' + dupCustCount + '명 / 비율 ' + dupRate + '%)';
+    else {
+      var dupWord = dupDiff < 0 ? '감소 — 개선' : '증가 — 악화';
+      dupInsight = (dupDiff < 0 ? '↓' : '↑') + ' 전전주 대비 ' + Math.abs(dupDiff) + '명 ' + dupWord + ' | 비율 ' + dupRate + '%';
+    }
+
+    // DOM 업데이트 (인사이트)
+    var elIT = document.getElementById('insight-total');
+    if (elIT) elIT.textContent = insTotal;
+    var elIR = document.getElementById('insight-rate');
+    if (elIR) elIR.textContent = rateInsight;
+    var elIH = document.getElementById('insight-rt');
+    if (elIH) elIH.textContent = rtInsight;
+    var elID = document.getElementById('insight-dup');
+    if (elID) elID.textContent = dupInsight;
 
     var lbl = document.getElementById('donut-label');
     if (lbl) lbl.textContent = '완료 ' + lwDone.toLocaleString() + '건 / 미처리 ' + lwUnhandled + '건';
@@ -1671,16 +1879,50 @@ function renderMonthlyTrendSection() {
   var el = document.getElementById('monthlyTrendContainer');
   if (!el) return;
 
+  var scw = window._SLACK_CS_WEEKLY || [];
+  var sd  = window._SLACK_DATA || {};
+  var fn  = sd.funnel || {};
+
+  // 월별 평균 응답 시간 (시간 → 분, slackWeeklyData 기준)
+  function monthAvgMin(mo) {
+    var wks = scw.filter(function(w){ return parseInt(w.start.split('-')[1],10) === mo; });
+    if (!wks.length) return 0;
+    return Math.round(wks.reduce(function(s,w){ return s + w.avg_rt; }, 0) / wks.length * 60);
+  }
+
+  var rt4 = monthAvgMin(4), rt5 = monthAvgMin(5), rt6 = monthAvgMin(6);
+  var cv6    = fn.firstCharge ? fn.firstCharge.rate     : 0;
+  var cvAvg  = fn.firstCharge ? fn.firstCharge.avg12Rate : 0;
+
   var monthlyData = {
     months: ['4월', '5월', '6월'],
-    responseTime: [820, 852, 1080],
-    conversion:   [26.5, 26.3, 21.5]
+    responseTime: [rt4, rt5, rt6],
+    conversion:   [cvAvg, cvAvg, cv6]   // 4·5월은 12주평균 기준
   };
 
-  function makeBar(month, numVal, unit, maxVal, isRed) {
-    var pct = Math.round((numVal / maxVal) * 100);
-    var barColor = isRed ? '#fca5a5' : '#cbd5e1';
-    var textColor = isRed ? '#991b1b' : '#334155';
+  // 진단 메시지 동적 계산
+  var rtGap = rt6 - rt5;
+  var rtOk  = rtGap <= 0;
+  var rtDiagStyle = rtOk
+    ? 'color:#059669;background:#f0fdf4;border:1px solid #bbf7d0;'
+    : 'color:#991b1b;background:#fff1f2;border:1px solid #fca5a5;';
+  var rtDiagMsg = rtOk
+    ? '✅ <b>개선:</b> 5→6월 응답시간 단축 (전월 대비 ' + rtGap + '분)'
+    : '⚠️ <b>진단:</b> 5→6월 응답시간 급증 (전월 대비 +' + Math.abs(rtGap) + '분)';
+
+  var cvGap = Math.round((cv6 - cvAvg) * 10) / 10;
+  var cvOk  = cvGap >= 0;
+  var cvDiagStyle = cvOk
+    ? 'color:#059669;background:#f0fdf4;border:1px solid #bbf7d0;'
+    : 'color:#991b1b;background:#fff1f2;border:1px solid #fca5a5;';
+  var cvDiagMsg = cvOk
+    ? '✅ <b>개선:</b> 이번 주 첫충전 전환율 ' + cv6 + '%, 12주 평균(' + cvAvg + '%) 대비 +' + cvGap + '%p'
+    : '⚠️ <b>진단:</b> 이번 주 첫충전 전환율 ' + cv6 + '%, 12주 평균(' + cvAvg + '%) 대비 ' + cvGap + '%p';
+
+  function makeBar(month, numVal, unit, maxVal, isLast, isGoodLast) {
+    var pct = maxVal > 0 ? Math.round((numVal / maxVal) * 100) : 0;
+    var barColor = isLast ? (isGoodLast ? '#86efac' : '#fca5a5') : '#cbd5e1';
+    var textColor = isLast ? (isGoodLast ? '#166534' : '#991b1b') : '#334155';
     return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">'
       + '<div style="width:36px;font-size:12px;color:#64748b;font-weight:600;">' + month + '</div>'
       + '<div style="flex:1;background:#f1f5f9;height:24px;border-radius:4px;overflow:hidden;position:relative;">'
@@ -1689,77 +1931,332 @@ function renderMonthlyTrendSection() {
       + '</div></div>';
   }
 
-  var rtMax = Math.max.apply(null, monthlyData.responseTime);
-  var convMax = 30;
+  var rtMax   = Math.max.apply(null, monthlyData.responseTime) || 1;
+  var convMax = Math.max.apply(null, monthlyData.conversion) + 5;
 
   var rtBars = monthlyData.months.map(function(m,i){
-    return makeBar(m, monthlyData.responseTime[i], '분', rtMax, i===2);
+    return makeBar(m, monthlyData.responseTime[i], '분', rtMax, i===2, rtOk);
   }).join('');
   var convBars = monthlyData.months.map(function(m,i){
-    return makeBar(m, monthlyData.conversion[i], '%', convMax, i===2);
+    return makeBar(m, monthlyData.conversion[i], '%', convMax, i===2, cvOk);
   }).join('');
 
   el.innerHTML = '<div style="padding:20px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.04);">'
-    + '<div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:18px;">📈 최근 3개월 월별 운영 성과 추이 비교</div>'
+    + '<div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:18px;">📈 최근 3개월 월별 운영 성과 추이</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">'
 
     + '<div>'
-    + '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">⏱️ 월평균 응답 시간 (분)</div>'
+    + '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">⏱️ 월평균 응답 시간 (분 · 슬랙 기준)</div>'
     + rtBars
-    + '<div style="margin-top:8px;font-size:11px;color:#991b1b;background:#fff1f2;padding:6px 10px;border-radius:4px;border:1px solid #fca5a5;">'
-    + '⚠️ <b>진단:</b> 4·5월 대비 6월 응대 지연폭 급증 (전월 대비 +228분)'
-    + '</div></div>'
+    + '<div style="margin-top:8px;font-size:11px;padding:6px 10px;border-radius:4px;' + rtDiagStyle + '">'
+    + rtDiagMsg + '</div></div>'
 
     + '<div>'
-    + '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">💳 월평균 충전 전환율 (%)</div>'
+    + '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">💳 첫충전 전환율 (% · 4·5월은 12주평균)</div>'
     + convBars
-    + '<div style="margin-top:8px;font-size:11px;color:#991b1b;background:#fff1f2;padding:6px 10px;border-radius:4px;border:1px solid #fca5a5;">'
-    + '⚠️ <b>진단:</b> 6월 충전 정착 전환율 하락 추세 (전월 대비 −4.8%p)'
-    + '</div></div>'
+    + '<div style="margin-top:8px;font-size:11px;padding:6px 10px;border-radius:4px;' + cvDiagStyle + '">'
+    + cvDiagMsg + '</div></div>'
 
     + '</div></div>';
+}
+
+/* ──────────────────────────────────────────────
+   이번 주 핵심 신호 요약 — slackData + slackWeeklyData 기반 자동 생성
+   ────────────────────────────────────────────── */
+function renderWeeklySignal() {
+  /* ── 운영팀 관점 주간 리뷰 포인트
+     포함 기준: 운영팀이 직접 실행 가능한 항목만
+       - CS 문의량 / 응답시간 / 미답변  → 직접 처리
+       - 인증 거절 재안내 건수           → 문자 발송
+       - 휴면전환 급증                   → 재활성화 캠페인 발송
+       - 첫충전→첫발송 미전환            → 온보딩 문자 발송
+       - 휴면해제 재활성화율             → 캠페인 성과 확인
+     제외: 매출, ARPPU, 신규가입, 채널 믹스 (운영팀 직접 액션 불가)
+  ── */
+  var box = document.getElementById('weekly-signal-box');
+  if (!box) return;
+
+  var sd   = window._SLACK_DATA      || {};
+  var scw  = window._SLACK_CS_WEEKLY || [];
+  var acq  = sd.acquisition || {};
+  var fn   = sd.funnel      || {};
+  var auth = sd.auth        || {};
+  var period = (sd.period && sd.period.label) ? sd.period.label : '—';
+
+  /* CS 주간 비교 */
+  var csNow  = scw.length     ? scw[scw.length - 1] : null;
+  var csPrev = scw.length > 1 ? scw[scw.length - 2] : null;
+  var csTotalDiff = (csNow && csPrev && csPrev.total > 0)
+    ? Math.round((csNow.total - csPrev.total) / csPrev.total * 100) : null;
+  var csRtMin = csNow ? scw.every(function(w){ return w.avg_rt >= csNow.avg_rt; }) : false;
+
+  /* 파생값 */
+  var callerRej = auth.callerReg ? auth.callerReg.rejected : 0;
+  var bizRej    = auth.bizAuth   ? auth.bizAuth.rejected   : 0;
+  var totalRej  = callerRej + bizRej;
+  var sendGap   = (fn.firstCharge && fn.firstSend) ? fn.firstCharge.val - fn.firstSend.val : 0;
+  var dormant   = acq.dormant ? acq.dormant : {};
+  var dormResume = acq.dormantResume ? acq.dormantResume : {};
+  var dormResumeRate = dormant.val > 0 ? Math.round((dormResume.val || 0) / dormant.val * 100) : 0;
+
+  /* items: { tier, score, label, value, badge, action } */
+  var items = [];
+  function add(tier, score, label, value, badge, action) {
+    items.push({ tier: tier, score: score, label: label, value: value, badge: badge, action: action });
+  }
+
+  /* ── 🔴 즉시 처리 ── */
+
+  /* CS 미답변 */
+  if (csNow) {
+    var una = csNow.unanswered;
+    if      (una >= 30) add('red', una,  'CS 미답변',   una + '건',  '즉시 처리', '미처리 문의 목록 확인 후 오늘 중 전량 답변 완료');
+    else if (una >= 15) add('red', una,  'CS 미답변',   una + '건',  '처리 필요', '금일 내 처리 목표 — 담당자별 분배 확인');
+  }
+
+  /* CS 응답시간 지연 */
+  if (csNow && csNow.avg_rt > 8)
+    add('red', csNow.avg_rt * 10, 'CS 응답시간', csNow.avg_rt + 'h', '심각 지연', '백로그 원인 파악 + 인력 재배치 or 우선순위 재조정 필요');
+
+  /* CS 문의 급증 */
+  if (csTotalDiff !== null && csTotalDiff >= 20)
+    add('red', csTotalDiff, 'CS 문의 급증', csNow.total + '건', '▲' + csTotalDiff + '%', '전주 대비 급증 — 반복 유형 파악 후 FAQ·안내문 보완 긴급');
+
+  /* 휴면전환 급증 */
+  if (dormant.diff >= 10)
+    add('red', dormant.diff, '휴면전환 급증', dormant.val + '명', '▲' + dormant.diff + '%',
+      '골든타임(7일) 내 재활성화 문자 발송 — 잔액 유무별 2종 메시지 준비');
+
+  /* ── 🟡 이번 주 처리 ── */
+
+  /* 인증 거절 재안내 — 매주 필수 실행 */
+  if (totalRej > 0) {
+    var rejScore = totalRej;
+    var rejTier  = totalRej >= 60 ? 'red' : 'yellow';
+    add(rejTier, rejScore, '인증 거절 재안내', totalRej + '건',
+      '발신 ' + callerRej + ' + 사업자 ' + bizRej,
+      '거절 사유별 재안내 문자 발송 — 재신청 전환율 높이는 핵심 액션');
+  }
+
+  /* 첫충전→첫발송 미전환 온보딩 */
+  if (sendGap > 0) {
+    var sgTier = sendGap >= 80 ? 'red' : 'yellow';
+    add(sgTier, sendGap, '온보딩 문자 발송', sendGap + '명',
+      '첫충전 후 미발송',
+      '충전 후 48h 이내 발송 가이드 문자 발송 — 이탈 전 골든타임');
+  }
+
+  /* 휴면전환 소폭 증가 */
+  if (dormant.diff >= 5 && dormant.diff < 10)
+    add('yellow', dormant.diff, '휴면전환 증가', dormant.val + '명', '▲' + dormant.diff + '%',
+      '재활성화 문자 발송 대상 명단 추출 — 이번 주 내 발송 준비');
+
+  /* CS 응답시간 중간 지연 */
+  if (csNow && csNow.avg_rt > 3 && csNow.avg_rt <= 8)
+    add('yellow', csNow.avg_rt * 10, 'CS 응답시간', csNow.avg_rt + 'h', '지연',
+      '응답 병목 구간 확인 — 문의 유형별 처리 시간 점검');
+
+  /* CS 문의 소폭 증가 */
+  if (csTotalDiff !== null && csTotalDiff >= 10 && csTotalDiff < 20)
+    add('yellow', csTotalDiff, 'CS 문의 증가', csNow.total + '건', '▲' + csTotalDiff + '%',
+      '반복 문의 유형 파악 — 안내 개선으로 선제 차단 여부 검토');
+
+  /* ── 🟢 잘 되고 있는 것 ── */
+
+  /* CS 문의 감소 */
+  if (csTotalDiff !== null && csTotalDiff <= -10)
+    add('green', Math.abs(csTotalDiff), 'CS 문의 감소', csNow.total + '건', '▼' + Math.abs(csTotalDiff) + '%',
+      '전주 대비 문의 감소 — 안내 개선 효과 또는 CS 예방 조치 성과');
+
+  /* CS 응답시간 빠름 */
+  if (csNow && csNow.avg_rt <= 1)
+    add('green', 50, 'CS 응답시간', csNow.avg_rt + 'h',
+      csRtMin ? '전체 기간 최저' : '양호',
+      '빠른 응답 유지' + (csRtMin ? ' — 역대 최저 기록' : '') + ' · 이 속도 유지 목표');
+
+  /* CS 미답변 양호 */
+  if (csNow && csNow.unanswered < 10 && csNow.total > 0)
+    add('green', 30, 'CS 미답변', csNow.unanswered + '건',
+      '미답변율 ' + Math.round(csNow.unanswered / csNow.total * 100) + '%',
+      '미답변 최소화 유지 중 — 처리 품질 양호');
+
+  /* 휴면해제 재활성화율 */
+  if (dormResume.val >= 80 || dormResumeRate >= 20)
+    add('green', dormResumeRate, '재활성화 성과', dormResume.val + '명',
+      '재활성화율 ' + dormResumeRate + '%',
+      '휴면전환 대비 재활성화 비율 — 캠페인 효과 확인');
+
+  /* ── 정렬: red → yellow → green, 같은 tier 내 score 내림차순 ── */
+  var tierOrder = { red: 0, yellow: 1, green: 2 };
+  items.sort(function(a, b) {
+    if (tierOrder[a.tier] !== tierOrder[b.tier]) return tierOrder[a.tier] - tierOrder[b.tier];
+    return b.score - a.score;
+  });
+
+  /* ── HTML 렌더링 ── */
+  var tierMeta = {
+    red:    { bg: '#fef2f2', border: '#fca5a5', dot: '#dc2626', label: '즉시 처리',   dotChar: '🔴' },
+    yellow: { bg: '#fffbeb', border: '#fde68a', dot: '#d97706', label: '이번 주 실행', dotChar: '🟡' },
+    green:  { bg: '#f0fdf4', border: '#86efac', dot: '#16a34a', label: '성과 공유',    dotChar: '🟢' }
+  };
+
+  var rows = '';
+  var num  = 1;
+  var lastTier = null;
+
+  items.forEach(function(it) {
+    var m = tierMeta[it.tier];
+
+    if (it.tier !== lastTier) {
+      if (lastTier !== null) rows += '<div style="height:1px;background:#e2e8f0;margin:8px 0;"></div>';
+      rows += '<div style="font-size:10px;font-weight:800;color:' + m.dot + ';margin-bottom:7px;letter-spacing:.3px;">'
+        + m.dotChar + ' ' + m.label + '</div>';
+      lastTier = it.tier;
+    }
+
+    var bdgBg  = it.tier === 'red' ? '#fee2e2' : it.tier === 'yellow' ? '#fef3c7' : '#dcfce7';
+    var bdgCol = it.tier === 'red' ? '#b91c1c' : it.tier === 'yellow' ? '#92400e' : '#166534';
+
+    rows +=
+      '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:9px;padding:9px 11px;'
+      + 'background:' + m.bg + ';border:1px solid ' + m.border + ';border-radius:8px;">'
+      + '<div style="width:20px;height:20px;border-radius:50%;background:' + m.dot + ';color:white;'
+      + 'font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + num + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+      +   '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">'
+      +     '<span style="font-size:11px;font-weight:800;color:#0f172a;">' + it.label + '</span>'
+      +     '<span style="font-size:11px;font-weight:700;color:#475569;">' + it.value + '</span>'
+      +     '<span style="font-size:10px;font-weight:800;background:' + bdgBg + ';color:' + bdgCol + ';padding:1px 7px;border-radius:20px;">' + it.badge + '</span>'
+      +   '</div>'
+      +   '<div style="font-size:10px;color:#475569;line-height:1.5;font-weight:600;">→ ' + it.action + '</div>'
+      + '</div>'
+      + '</div>';
+    num++;
+  });
+
+  if (!items.length)
+    rows = '<div style="font-size:11px;color:#94a3b8;padding:12px;">이번 주 특이 항목 없음 — 정상 운영 중</div>';
+
+  box.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+    + '<div style="display:flex;align-items:center;gap:8px;">'
+    +   '<div class="sec-label" style="margin:0;font-size:12px;color:#0f172a;font-weight:900;letter-spacing:0;">📌 운영팀 주간 리뷰 포인트</div>'
+    +   '<span style="font-size:10px;color:#64748b;background:#f1f5f9;border-radius:20px;padding:2px 8px;font-weight:600;">' + items.length + '개 항목</span>'
+    + '</div>'
+    + '<div style="font-size:10px;color:#94a3b8;background:#f8fafc;border:1px solid #e2e8f0;padding:3px 10px;border-radius:20px;">' + period + '</div>'
+    + '</div>'
+    + '<div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:14px 15px;">'
+    + rows
+    + '</div>';
 }
 
 function render3StepDashboard() {
   var el = document.getElementById('ops-matrix');
   if (!el) return;
 
-  /* ── 3개 과제 카드 데이터 ── */
+  /* ── 슬랙 데이터에서 동적으로 과제 계산 ── */
+  var sd   = window._SLACK_DATA       || {};
+  var scw  = window._SLACK_CS_WEEKLY  || [];
+  var acq  = sd.acquisition || {};
+  var fn   = sd.funnel      || {};
+  var auth = sd.auth        || {};
+  var period = (sd.period && sd.period.label) ? sd.period.label : '—';
+
+  /* 현재 주 CS 데이터 */
+  var currentWk = (sd.period && scw.length)
+    ? (scw.find(function(w){ return w.start === sd.period.start; }) || scw[scw.length-1])
+    : (scw.length ? scw[scw.length-1] : null);
+
+  /* Task 01 — 인증 거절 재안내 */
+  var callerRej = auth.callerReg ? auth.callerReg.rejected  : 0;
+  var bizRej    = auth.bizAuth   ? auth.bizAuth.rejected     : 0;
+  var totalRej  = callerRej + bizRej;
+  var callerApp = auth.callerReg ? auth.callerReg.approveRate : 0;
+  var bizApp    = auth.bizAuth   ? auth.bizAuth.approveRate   : 0;
+
+  /* Task 02 — 휴면전환 급증 대응 */
+  var dormant    = acq.dormant       ? acq.dormant.val       : 0;
+  var dormDiff   = acq.dormant       ? acq.dormant.diff      : 0;
+  var dormAvg12  = acq.dormant       ? acq.dormant.avg12     : 0;
+  var dormResume = acq.dormantResume ? acq.dormantResume.val : 0;
+  var churn      = acq.churn         ? acq.churn.val         : 0;
+  var dormResumeRate = dormant > 0 ? Math.round(dormResume / dormant * 100) : 0;
+
+  /* Task 03 — 첫충전→첫발송 미전환 */
+  var firstCharge     = fn.firstCharge ? fn.firstCharge.val  : 0;
+  var firstChargeRate = fn.firstCharge ? fn.firstCharge.rate : 0;
+  var firstSend       = fn.firstSend   ? fn.firstSend.val    : 0;
+  var firstSendRate   = fn.firstSend   ? fn.firstSend.rate   : 0;
+  var sendGap         = firstCharge - firstSend;
+  var sendGapRate     = firstCharge > 0 ? Math.round((1 - firstSend / firstCharge) * 100) : 0;
+
+  /* ── 3개 과제 카드 데이터 (동적 계산) ── */
   var TASKS = [
     {
-      num:'01', kpi:'재안내', title:'인증 거절 사유별 재안내 문자 작성·발송', owner:'미정',
-      action:'사유별 표준 재안내 문자 템플릿 작성 후 대상 397건에 발송',
-      진단:'재안내 가능한 인증 거절·반려 397건, 거절 사유가 7~8개 유형에 집중',
-      steps:[
-        '템플릿  이용증명원 관련 거절(팩스 미수신·발급 1개월 경과) 재안내 문자 작성 — 사유 27건',
-        '템플릿  사업자등록증·증명 QR·직인 미확인 거절 재안내 문자 작성 — 사유 34건',
-        '발송  사유별 템플릿을 대상 397건에 매칭해 재안내 문자 발송'
+      num: '01', kpi: '재안내', owner: '미정',
+      title: '인증 거절 재안내 문자 발송',
+      action: '발신번호 거절 ' + callerRej + '건 + 사업자 거절 ' + bizRej + '건 = 총 ' + totalRej + '건 재안내 문자 발송',
+      진단: period + ' 발신번호 거절 ' + callerRej + '건(승인율 ' + callerApp + '%) · 사업자 거절 ' + bizRej + '건(승인율 ' + bizApp + '%) — 재안내 가능 총 ' + totalRej + '건',
+      steps: [
+        '확인  발신번호 거절 ' + callerRej + '건 사유 분류 (통신서비스 이용증명원·명의 불일치 등)',
+        '확인  사업자 거절 ' + bizRej + '건 사유 분류 (QR·직인 미확인·서류 미비 등)',
+        '발송  사유별 재안내 문자 템플릿 매칭 후 총 ' + totalRej + '건에 발송'
       ],
-      요청:'별도 승인 불필요 — 운영팀 내 작성·발송 가능'
+      요청: '별도 승인 불필요 — 운영팀 내 작성·발송 가능'
     },
     {
-      num:'02', kpi:'응답지연', title:'응답 지연 반복 유발 유형 표준 답변 구축', owner:'미정',
-      action:'반복 지연 유형 표준 답변 문안 작성 및 응답 가이드 문서화',
-      진단:'24시간 초과 응답 1,512건 중 1,305건(86%)이 스마트문자 문의에 집중',
-      steps:[
-        '추출  24시간 초과 1위 스마트문자 문의의 세부 질문 유형 추출',
-        '작성  반복 질문 표준 답변 문안 + 엑셀·환불 지연 유형 템플릿 작성',
-        '문서화  표준 답변을 답변 도구에서 호출하도록 응답 가이드 정리'
+      num: '02', kpi: '이탈 방어', owner: '미정',
+      title: '휴면전환 급증 대응 — 재활성화 캠페인',
+      action: '휴면전환 ' + dormant + '명(12주 평균 ' + dormAvg12 + '명 대비 ' + (dormDiff > 0 ? '+' : '') + dormDiff + '%) 대상 재활성화 메시지 발송',
+      진단: period + ' 휴면전환 ' + dormant + '명으로 12주 평균(' + dormAvg12 + '명) 대비 ' + (dormDiff > 0 ? '+' : '') + dormDiff + '% 급증 · 탈퇴 ' + churn + '명 · 휴면해제 ' + dormResume + '명(재활성화율 ' + dormResumeRate + '%)',
+      steps: [
+        '추출  이번 주 휴면전환 ' + dormant + '명 대상 목록 추출 (마지막 발송일·충전 잔액 기준)',
+        '작성  잔액 유무별 재활성화 문자 2종 작성 (잔액 있음: 발송 독려 / 없음: 소액 충전 혜택 안내)',
+        '발송  휴면 후 7일 이내 재활성화 문자 발송 (이탈 확정 전 골든타임 공략)'
       ],
-      요청:'별도 승인 불필요 — 운영팀 내 작성·문서화 가능'
+      요청: '별도 승인 불필요 — 운영팀 내 발송 가능'
     },
     {
-      num:'03', kpi:'재문의', title:'재문의 Top 유형 1회 완결 스크립트 작성', owner:'미정',
-      action:'후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 및 FAQ 반영',
-      진단:'30일 내 재문의 사용자 1,115명(38.8%), 재문의도 스마트문자 문의에 집중',
-      steps:[
-        '분석  재문의 사용자 스마트문자 문의 미완결 패턴 분석',
-        '작성  후속 질문 선제 안내 1회 완결 스크립트 + 엑셀·이메일 유형 작성',
-        '반영  완결 스크립트를 FAQ·표준 답변에 반영하는 업데이트안 정리'
+      num: '03', kpi: '전환 개선', owner: '미정',
+      title: '첫충전→첫발송 미전환 ' + sendGap + '명 전환 유도',
+      action: '첫충전 완료 후 미발송 ' + sendGap + '명(' + sendGapRate + '%) 대상 발송 독려 온보딩 문자 발송',
+      진단: period + ' 첫충전 ' + firstCharge + '명(전환율 ' + firstChargeRate + '%) 중 첫발송 전환 ' + firstSend + '명(' + firstSendRate + '%) — ' + sendGap + '명(' + sendGapRate + '%)이 충전 후 미발송 이탈 위험',
+      steps: [
+        '추출  이번 주 첫충전 후 미발송 ' + sendGap + '명 대상 목록 추출',
+        '발송  발송 시작 가이드 + 템플릿 추천 온보딩 문자 발송 (충전 후 48시간 이내)',
+        '팔로업  발송 3일 후에도 미발송 시 1:1 채팅 CS 연결 권유'
       ],
-      요청:'별도 승인 불필요 — 운영팀 내 작성·반영 가능'
+      요청: '별도 승인 불필요 — 운영팀 내 발송 가능'
     }
   ];
+
+  /* jTasks도 같이 동기화 (Jira 등록용) */
+  window.jTasks = {
+    1: { summary: '[TASK 01] 인증 거절 재안내 문자 발송', priority: 'Highest',
+         desc: '【진단】\n' + period + ' 발신번호 거절 ' + callerRej + '건(승인율 ' + callerApp + '%) · 사업자 거절 ' + bizRej + '건(승인율 ' + bizApp + '%) — 재안내 가능 총 ' + totalRej + '건\n\n【실행 과제】\n사유별 재안내 문자 템플릿 매칭 후 총 ' + totalRej + '건에 발송\n\n【근거】\n발신번호 거절 ' + callerRej + '건 + 사업자 거절 ' + bizRej + '건',
+         subs: [
+           '발신번호 거절 ' + callerRej + '건 사유 분류 (통신서비스 이용증명원·명의 불일치 등) | 이유: 거절 사유별 표준 재안내 문자 1종씩 작성 가능',
+           '사업자 거절 ' + bizRej + '건 사유 분류 (QR·직인 미확인·서류 미비 등) | 이유: QR·직인·서류 미비 사유는 보완 방법이 명확해 표준화 용이',
+           '사유별 재안내 문자 템플릿 매칭 후 총 ' + totalRej + '건에 발송 | 이유: 재안내 후 재신청 전환 유도로 인증 완료율 향상 기대'
+         ]
+    },
+    2: { summary: '[TASK 02] 휴면전환 급증 대응 재활성화 캠페인', priority: 'High',
+         desc: '【진단】\n' + period + ' 휴면전환 ' + dormant + '명으로 12주 평균(' + dormAvg12 + '명) 대비 ' + (dormDiff > 0 ? '+' : '') + dormDiff + '% 급증 · 탈퇴 ' + churn + '명 · 휴면해제 ' + dormResume + '명\n\n【실행 과제】\n휴면전환 ' + dormant + '명 대상 재활성화 메시지 발송\n\n【근거】\n휴면전환 12주 평균 대비 ' + (dormDiff > 0 ? '+' : '') + dormDiff + '%, 재활성화율 ' + dormResumeRate + '%',
+         subs: [
+           '이번 주 휴면전환 ' + dormant + '명 대상 목록 추출 (마지막 발송일·충전 잔액 기준) | 이유: 잔액 유무에 따라 메시지 분기 필요',
+           '잔액 유무별 재활성화 문자 2종 작성 (잔액 있음: 발송 독려 / 없음: 소액 충전 혜택) | 이유: 잔액 있는 고객은 발송 유도가 재활성화에 효과적',
+           '휴면 후 7일 이내 재활성화 문자 발송 | 이유: 휴면 직후 골든타임 내 접촉이 재활성화율 극대화'
+         ]
+    },
+    3: { summary: '[TASK 03] 첫충전→첫발송 미전환 ' + sendGap + '명 전환 유도', priority: 'High',
+         desc: '【진단】\n' + period + ' 첫충전 ' + firstCharge + '명(' + firstChargeRate + '%) 중 첫발송 ' + firstSend + '명(' + firstSendRate + '%) — 미전환 ' + sendGap + '명(' + sendGapRate + '%) 이탈 위험\n\n【실행 과제】\n미발송 ' + sendGap + '명 대상 발송 독려 온보딩 문자 발송\n\n【근거】\n첫충전→첫발송 갭 ' + sendGap + '명, 충전 후 48시간이 이탈 방어 골든타임',
+         subs: [
+           '이번 주 첫충전 후 미발송 ' + sendGap + '명 대상 목록 추출 | 이유: 충전 후 발송 미착수 고객이 이탈 위험 최고',
+           '발송 시작 가이드 + 템플릿 추천 온보딩 문자 발송 (충전 후 48시간 이내) | 이유: 48시간 내 발송 경험이 장기 활성화로 연결되는 핵심 구간',
+           '발송 3일 후에도 미발송 시 1:1 채팅 CS 연결 권유 | 이유: 비사용 이유 파악 + 즉각 지원으로 전환율 추가 개선 가능'
+         ]
+    }
+  };
 
   function insightBox(t) {
     var stepLines = t.steps.map(function(s){
@@ -1811,6 +2308,10 @@ function render3StepDashboard() {
     + '</div>';
 
   el.innerHTML = grid;
+
+  /* 매트릭스 기간 라벨 — 슬랙 데이터 기준으로 직접 업데이트 (initConvData 의존 제거) */
+  var mLabel = document.getElementById('lw-matrix-period');
+  if (mLabel && period !== '—') mLabel.textContent = period;
 }
 
 function renderConvTable() {
@@ -2243,6 +2744,8 @@ window.addEventListener('DOMContentLoaded', function(){
   renderMonthlyTrendSection();
   renderAARRRFunnelInline();
   renderSlackGrowth();
+  render3StepDashboard(); /* slackData만으로 렌더 — initConvData(data.js) 불필요 */
+  renderWeeklySignal();  /* 핵심 신호 요약 카드 */
 
   /* pg-c가 hidden 상태에서 Chart.js 초기화 → 캔버스 크기 0px 버그 방지
      탭 선택 시 재렌더링 */
@@ -2274,9 +2777,9 @@ function jToggleAlt(num) {
 function jSelectAlt(num, idx) {
   var alt = jAlts[num][idx];
   if (!alt) return;
-  jTasks[num].summary = alt.title;
-  jTasks[num].desc = '배경: ' + alt.why + '\n\n서브태스크:\n' + alt.subs.map(function(s,i){ return (i+1)+'. '+s; }).join('\n');
-  jTasks[num].subs = alt.subs;
+  window.jTasks[num].summary = alt.title;
+  window.jTasks[num].desc = '배경: ' + alt.why + '\n\n서브태스크:\n' + alt.subs.map(function(s,i){ return (i+1)+'. '+s; }).join('\n');
+  window.jTasks[num].subs = alt.subs;
   var titleEl = document.getElementById('j-story-title-0'+num);
   var descEl  = document.getElementById('j-story-desc-0'+num);
   var subsEl  = document.getElementById('j-story-subs-0'+num);
@@ -2306,35 +2809,16 @@ function jSelectAlt(num, idx) {
   if (resEl) resEl.innerHTML = '';
 }
 
-var jTasks = {
-  1: { summary: '[TASK 01] 인증 거절 사유별 재안내 문자 템플릿 작성 및 발송', priority: 'Highest',
-       desc: '【진단】\n재안내 가능한 인증 거절·반려 397건, 거절 사유가 7~8개 유형에 집중\n\n【실행 과제】\n사유별 표준 재안내 문자 템플릿 작성 후 대상 397건에 발송\n\n【근거】\n발신번호 거절 299건 + 사업자 반려 190건 중 재안내 가능 397건',
-       subs: ['통신서비스 이용증명원 관련 거절(팩스 미수신·발급 1개월 경과) 재안내 문자 템플릿 작성 | 이유: 이용증명원 사유 거절 27건으로 단일 사유 중 최다, 표준 문구로 재신청 안내 가능',
-              '사업자등록증·증명 위변조 QR·세무서장 직인 미확인 거절 재안내 문자 템플릿 작성 | 이유: QR·직인 사유 거절 34건, 서류 재발급 방법이 동일해 1개 템플릿으로 커버 가능',
-              '주민번호 마스킹 누락·재직증명서 미비 거절 재안내 문자 템플릿 작성 | 이유: 마스킹·재직증명서 사유 16건, 보완 기준이 명확해 표준화 용이',
-              '작성한 사유별 템플릿을 대상 397건에 매칭해 재안내 문자 발송 | 이유: 재안내 가능 397건 전체가 표준 문자 발송으로 재신청 전환 유도 가능'] },
-  2: { summary: '[TASK 02] 응답 지연 반복 유발 유형 표준 답변 체계 구축', priority: 'High',
-       desc: '【진단】\n24시간 초과 응답 1512건 중 1305건(86%)이 스마트문자 문의에 집중\n\n【실행 과제】\n반복 지연 유형 표준 답변 문안 작성 및 응답 가이드 문서화\n\n【근거】\n초과 응답 1512건, 피크 응답 25.6h',
-       subs: ['24시간 초과 응답 1위 스마트문자 문의의 세부 질문 유형 추출 | 이유: 초과 1512건 중 1305건(86%)이 이 유형, 세분화 시 표준화 대상 도출 가능',
-              '추출된 스마트문자 반복 질문에 대한 표준 답변 문안 작성 | 이유: 동일 질문 반복으로 표준 답변 1세트가 다수 문의에 재사용 가능',
-              '엑셀파일 등록대행·환불문의 지연 유형 표준 답변 템플릿 작성 | 이유: 각각 73건·59건 초과 발생, 절차 안내형이라 템플릿화 적합',
-              '작성한 표준 답변을 답변 도구에서 바로 호출하도록 응답 가이드 문서로 정리 | 이유: 초과 응답 86% 집중 유형의 답변을 도구에서 즉시 불러오도록 문서화 필요'] },
-  3: { summary: '[TASK 03] 재문의 Top 유형 1회 완결 스크립트 작성', priority: 'High',
-       desc: '【진단】\n30일 내 재문의 사용자 1115명(38.8%), 재문의도 스마트문자 문의에 집중\n\n【실행 과제】\n후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 및 FAQ 반영\n\n【근거】\n재문의 1115명 / 전체 2876명, 재문의율 38.8%',
-       subs: ['재문의 사용자 문의 중 1회로 끝나지 않은 스마트문자 문의 미완결 패턴 분석 | 이유: 재문의 사용자 문의 중 스마트문자가 최다, 미완결 패턴이 스크립트 기초',
-              '자주 누락되는 후속 질문을 선제 안내하는 1회 완결 답변 스크립트 작성 | 이유: 재문의율 38.8%(1115/2876), 선제 안내로 2차 문의 유발 요소 제거 가능',
-              '엑셀파일 등록대행·이메일 문의 재문의 유형 완결 스크립트 작성 | 이유: 재문의 사용자 문의 411건·244건 발생, 절차 누락이 재문의 원인',
-              '작성한 완결 스크립트를 FAQ·표준 답변에 반영하는 업데이트안 정리 | 이유: 재문의 Top 유형을 1회 답변에 통합해 재문의 감소 근거 확보'] }
-};
+/* jTasks는 render3StepDashboard()에서 window.jTasks = {...} 로 동적 생성됨 */
 var jAlts = {};
 var _jPreviewNum = null;
 var _jPreviewOwners = {1:'미정', 2:'미정', 3:'미정'};
-var _jPreviewKpis   = {1:'재안내', 2:'응답지연', 3:'재문의'};
-var _jPreviewColors = {1:'#f59e0b', 2:'#ef4444', 3:'#059669'};
+var _jPreviewKpis   = {1:'재안내', 2:'이탈 방어', 3:'전환 개선'};
+var _jPreviewColors = {1:'#f59e0b', 2:'#dc2626', 3:'#059669'};
 
 function jPreview(num) {
   _jPreviewNum = num;
-  var t = jTasks[num];
+  var t = window.jTasks[num];
   var parts = t.desc.split('\n\n');
   var 진단 = '', 과제 = '', 요청 = '';
   parts.forEach(function(s) {
@@ -2457,7 +2941,7 @@ function jRegisterTask(num) {
   }
   try { localStorage.setItem('j_tok', tok); } catch(ex) {}
 
-  var t = jTasks[num];
+  var t = window.jTasks[num];
   // 번호 교체 + 날짜 추가
   var newSummary = t.summary.replace(/\[TASK \d+\]/, '[TASK ' + padded + ']');
   var newDesc    = '생성일: ' + today + '\n\n' + t.desc;
