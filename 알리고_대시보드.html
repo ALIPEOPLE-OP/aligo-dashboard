@@ -185,8 +185,8 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
 </div>
 <div class="sec-label" style="display:flex;align-items:center;gap:8px;">운영 현황 지표 <span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;letter-spacing:0;text-transform:none;font-family:-apple-system,sans-serif;" id="badge-period-1">전주</span></div><div class="kpi-grid">
 <div class="kc bl"><div class="kl">총 문의 건수</div><div><span class="kv" id="kv-weekly-total">—</span><span class="ku">건</span></div><div class="ks" id="ks-weekly-total">계산 중...</div></div>
-<div class="kc gr"><div class="kl">응답 완료율</div><div><span class="kv" id="kv-response-rate">—</span><span class="ku">%</span></div><div class="badge" id="badge-response-rate">-</div></div>
-<div class="kc am"><div class="kl">평균 응답 시간</div><div><span class="kv" id="kv-avg-rt">—</span><span class="ku">h</span></div><div class="ks" id="ks-avg-rt">계산 중...</div></div>
+<div class="kc gr"><div class="kl">응답 완료율</div><div><span class="kv" id="kv-response-rate">—</span><span class="ku">%</span></div><div class="badge" id="badge-response-rate">-</div><div class="ks" id="ks-response-rate" style="margin-top:4px;"></div></div>
+<div class="kc am"><div class="kl">평균 응답 시간</div><div><span class="kv" id="kv-avg-rt">—</span><span class="ku">분</span></div><div class="ks" id="ks-avg-rt">계산 중...</div></div>
 <div class="kc rd"><div class="kl">중복 문의 고객</div>
 <div><span class="kv" id="kv-dup">—</span><span class="ku">명</span></div>
 <div class="ks" id="ks-dup">계산 중...</div></div>
@@ -198,7 +198,7 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f1f5f9;colo
   <div class="ins-item"><div class="ins-dot rd"></div><div><div class="ins-lbl">중복 문의 고객</div><div class="ins-txt" id="insight-dup">계산 중...</div></div></div>
 </div>
 
-<div class="sec-label">트렌드 (최근 12주)</div><div class="cg"><div class="card"><div class="ct">주간 문의 건수</div><div id="tC" style="margin-top:4px"><div style="display:flex;align-items:flex-end;gap:3px;height:90px;padding-top:4px"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">470</div><div style="width:100%;height:55px;background:#93c5fd;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-06</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">602</div><div style="width:100%;height:70px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-13</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">570</div><div style="width:100%;height:66px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-20</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">526</div><div style="width:100%;height:61px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">04-27</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">521</div><div style="width:100%;height:61px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-04</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">539</div><div style="width:100%;height:63px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-11</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">550</div><div style="width:100%;height:64px;background:#2563eb;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-18</div></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:9px;color:#64748b;font-weight:700">342</div><div style="width:100%;height:40px;background:#93c5fd;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:#94a3b8;white-space:nowrap">05-25</div></div></div><div style="margin-top:6px;font-size:10px;color:#f59e0b">— 평균 515건</div></div></div><div class="card"><div class="ct">문의 유형 Top 5</div><div id="t5"><div class="br"><div class="bl2">승인취소/환불</div><div class="bt"><div class="bf" style="width:100%"></div></div><div class="bc">571건</div></div><div class="br"><div class="bl2">세금계산서</div><div class="bt"><div class="bf" style="width:95%"></div></div><div class="bc">545건</div></div><div class="br"><div class="bl2">엑셀등록대행</div><div class="bt"><div class="bf" style="width:79%"></div></div><div class="bc">450건</div></div><div class="br"><div class="bl2">계정관리</div><div class="bt"><div class="bf" style="width:67%"></div></div><div class="bc">382건</div></div><div class="br"><div class="bl2">발신번호관리</div><div class="bt"><div class="bf" style="width:62%"></div></div><div class="bc">356건</div></div></div></div><div class="card"><div class="ct">응답 완료율</div><div id="dC" style="margin-top:4px"><div style="display:flex;flex-direction:column;align-items:center;padding:8px 0"><div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(#22c55e 346deg,#ef4444 346deg);display:flex;align-items:center;justify-content:center"><div style="width:68px;height:68px;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:18px;font-weight:900;color:#1e293b">96%</div></div></div><div style="margin-top:8px;font-size:11px;color:#64748b"><span id="donut-label">완료 3,973건 / 미처리 155건</span></div></div></div><div style="text-align:center;margin-top:8px;font-size:11px;color:#64748b;"><span style="color:#22c55e;margin-right:12px;">● 완료</span><span style="color:#ef4444;">● 미처리</span></div></div></div>
+<div class="sec-label">트렌드 (최근 12주)</div><div class="cg"><div class="card"><div class="ct">주간 문의 건수</div><div id="tC" style="margin-top:4px">로딩 중...</div></div><div class="card"><div class="ct">문의 유형 Top 5</div><div id="t5">로딩 중...</div></div><div class="card"><div class="ct">응답 완료율</div><div id="dC" style="margin-top:4px">로딩 중...</div></div></div>
 <div class="sec-label" style="display:flex;align-items:center;gap:8px;">상담 품질 <span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;letter-spacing:0;text-transform:none;font-family:-apple-system,sans-serif;">최근 3개월 월별 비교</span></div><div class="bg" style="grid-template-columns:1fr 1fr"><div class="card"><div class="ct">월별 응답 시간 분포 추이</div><div id="quality-resp-chart"></div></div><div class="card"><div class="ct">월별 카테고리별 미처리 추이</div><div id="quality-cat-chart"></div></div></div>
 <div style="margin-top:16px;">
 <div class="sec-label" style="display:flex;align-items:center;gap:8px;">미처리 문의 카테고리 분석 <span style="font-size:10px;font-weight:700;color:#0f766e;background:#ccfbf1;border:1px solid #99f6e4;padding:2px 8px;border-radius:20px;letter-spacing:0;text-transform:none;font-family:-apple-system,sans-serif;">기간 필터 연동</span></div>
@@ -1157,6 +1157,22 @@ function updateKPIBadges(records, lw, chatRecords) {
   var cur  = { start: lw.start, end: lw.end };
   var prev = { start: addDays(lw.start, -7), end: addDays(lw.end, -7) };
 
+  // 총 문의건수 분모: 운영 현황과 동일 — 게시판은 슬랙 기준, 채팅은 data.js 합산
+  var chatActiveForConv = chatRecords.filter(function(r){ return r['답변 상태'] !== '부재중'; });
+  var allRecsForConv = records.concat(chatActiveForConv);
+  var lwChatForConv = allRecsForConv.filter(function(r){
+    var d = (r['문의 일시'] || '').slice(0, 10);
+    return d >= lw.start && d <= lw.end && r['문의 채널'] !== '게시판';
+  }).length;
+  var slackWeeklyForConv = window._SLACK_CS_WEEKLY || [];
+  var slackLwForConv = slackWeeklyForConv.find(function(w){ return w.start === lw.start; }) || null;
+  var lwBoardForConv = slackLwForConv ? slackLwForConv.total
+    : allRecsForConv.filter(function(r){
+        var d = (r['문의 일시'] || '').slice(0, 10);
+        return d >= lw.start && d <= lw.end && r['문의 채널'] === '게시판';
+      }).length;
+  var lwTotalForConv = lwBoardForConv + lwChatForConv;
+
   // 각 지표별로 별도 분모 (아직 전환 안 한 고객만)
   var curBucket  = {chargeTotal:0, charge:0, callerTotal:0, caller:0, sendTotal:0, send:0, bizTotal:0, biz:0};
   var prevBucket = {chargeTotal:0, charge:0, callerTotal:0, caller:0, sendTotal:0, send:0, bizTotal:0, biz:0};
@@ -1238,7 +1254,10 @@ function updateKPIBadges(records, lw, chatRecords) {
     var bdgEl = document.getElementById('kpi-badge-' + m.key);
 
     if (m.curD > 0 && kvEl) kvEl.textContent = m.cur;
-    if (m.curD > 0 && ksEl) ksEl.textContent = m.curN + '건 전환 / ' + m.curD + '건';
+    if (m.curD > 0 && ksEl) {
+      var dispDenom = (lwTotalForConv && lwTotalForConv > 0) ? lwTotalForConv : m.curD;
+      ksEl.textContent = m.curN + '건 전환 / ' + dispDenom + '건 문의';
+    }
 
     if (bdgEl) {
       var gap = Math.round((m.cur - m.avg) * 10) / 10;
@@ -1247,12 +1266,13 @@ function updateKPIBadges(records, lw, chatRecords) {
     }
   });
 
-  // 기간 배지 업데이트 (전전주 문의 기준)
+  // 기간 배지 업데이트 (전주 슬랙 총 문의건수 기준으로 통일)
   var periodBadge = document.getElementById('badge-period-0');
   if (periodBadge && cur) {
     function fmtD(d) { return d.slice(5).replace('-', '/'); }
     var curPeriod = fmtD(cur.start) + '~' + fmtD(cur.end);
-    periodBadge.textContent = '📅 ' + curPeriod + ' 문의 기준 · 14일 이내 전환';
+    var totalLabel = (lwTotalForConv && lwTotalForConv > 0) ? '전주 총 ' + lwTotalForConv + '건 문의 기준 · 14일 이내 전환' : '📅 ' + curPeriod + ' 문의 기준 · 14일 이내 전환';
+    periodBadge.textContent = totalLabel;
   }
 
   // ── 운영 현황 지표 → 전주 기준 실제 데이터 업데이트 ──
@@ -1285,9 +1305,17 @@ function updateKPIBadges(records, lw, chatRecords) {
     var slackLw  = findSlackWk(lw.start);
     var slackPw2 = findSlackWk(pw2Start);
 
-    // 총 문의 건수: 슬랙 우선, 없으면 data.js 합산
-    var lwTotal  = slackLw  ? slackLw.total  : lwRecs.length;
-    var pw2Total = slackPw2 ? slackPw2.total : pw2Recs.length;
+    // 채널별 건수 (게시판: 슬랙 기준, 채팅: data.js 기준)
+    var lwBoardData  = lwRecs.filter(function(r){ return r['문의 채널'] === '게시판'; }).length;
+    var lwChat       = lwRecs.filter(function(r){ return r['문의 채널'] !== '게시판'; }).length;
+    var pw2BoardData = pw2Recs.filter(function(r){ return r['문의 채널'] === '게시판'; }).length;
+    var pw2Chat      = pw2Recs.filter(function(r){ return r['문의 채널'] !== '게시판'; }).length;
+
+    // 총 문의 건수: 게시판은 슬랙 techbot 우선, 채팅은 data.js 합산
+    var lwBoardTotal  = slackLw  ? slackLw.total  : lwBoardData;
+    var pw2BoardTotal = slackPw2 ? slackPw2.total : pw2BoardData;
+    var lwTotal  = lwBoardTotal + lwChat;
+    var pw2Total = pw2BoardTotal + pw2Chat;
 
     // 12주 평균: 슬랙 techbot 계산값 우선
     var avg12Total;
@@ -1304,34 +1332,47 @@ function updateKPIBadges(records, lw, chatRecords) {
       avg12Total = Math.round(w12Total / 12);
     }
 
-    // 응답 완료율: 슬랙 미답변 기준
-    var lwDone, lwUnhandled, lwRate;
+    // 채널별 레코드 분리
+    var lwBoardRecs = lwRecs.filter(function(r){ return r['문의 채널'] === '게시판'; });
+    var lwChatRecs  = lwRecs.filter(function(r){ return r['문의 채널'] !== '게시판'; });
+
+    // ── 응답 완료율: 게시판=슬랙 기준, 채팅=data.js ──
+    var lwDoneBoard, lwRateBoard, lwDoneChat, lwRateChat, lwDone, lwUnhandled, lwRate;
     if (slackLw) {
-      lwUnhandled = slackLw.unanswered;
-      lwDone      = slackLw.total - slackLw.unanswered;
-      lwRate      = Math.round(lwDone / slackLw.total * 1000) / 10;
+      lwUnhandled  = slackLw.unanswered;
+      lwDoneBoard  = slackLw.total - slackLw.unanswered;
+      lwRateBoard  = Math.round(lwDoneBoard / slackLw.total * 1000) / 10;
     } else {
-      lwDone      = lwRecs.filter(function(r) { return r['답변 상태'] === '답변완료'; }).length;
-      lwUnhandled = lwRecs.filter(function(r) {
+      lwDoneBoard  = lwBoardRecs.filter(function(r){ return r['답변 상태'] === '답변완료'; }).length;
+      lwRateBoard  = lwBoardRecs.length > 0 ? Math.round(lwDoneBoard / lwBoardRecs.length * 1000) / 10 : 0;
+      lwUnhandled  = lwBoardRecs.filter(function(r){
         var s = r['답변 상태'] || '';
         return s === '답변대기중' || s === '답변중' || s === '중간답변';
       }).length;
-      lwRate = lwTotal > 0 ? Math.round(lwDone / lwTotal * 1000) / 10 : 0;
     }
+    lwDoneChat = lwChatRecs.filter(function(r){ return r['답변 상태'] === '답변완료'; }).length;
+    lwRateChat = lwChatRecs.length > 0 ? Math.round(lwDoneChat / lwChatRecs.length * 1000) / 10 : 0;
+    lwDone     = lwDoneBoard + lwDoneChat;
+    lwRate     = lwTotal > 0 ? Math.round(lwDone / lwTotal * 1000) / 10 : 0;
     var rateGrade = lwRate >= 95 ? '양호' : lwRate >= 85 ? '보통' : '주의';
 
-    // 중복 문의 고객 (같은 아이디가 전주에 2회 이상 문의, 비회원 제외)
-    var idCnt = {};
-    lwRecs.forEach(function(r) {
-      var id = r['아이디'] || '';
-      if (!id || id === '' || id === '-' || id === '비회원') return;
-      idCnt[id] = (idCnt[id] || 0) + 1;
-    });
-    var dupCustomers = Object.keys(idCnt).filter(function(id) { return idCnt[id] >= 2; });
-    var dupCustCount = dupCustomers.length;
-    var dupInqCount  = dupCustomers.reduce(function(acc, id) { return acc + idCnt[id]; }, 0);
+    // ── 중복 문의 고객: 채널별 분리 ──
+    function calcDup(recs) {
+      var cnt = {};
+      recs.forEach(function(r) {
+        var id = r['아이디'] || '';
+        if (!id || id === '-' || id === '비회원') return;
+        cnt[id] = (cnt[id] || 0) + 1;
+      });
+      var dupes = Object.keys(cnt).filter(function(id){ return cnt[id] >= 2; });
+      return { cust: dupes.length, inq: dupes.reduce(function(a, id){ return a + cnt[id]; }, 0) };
+    }
+    var dupBoard = calcDup(lwBoardRecs);
+    var dupChat  = calcDup(lwChatRecs);
+    var dupCustCount = dupBoard.cust + dupChat.cust;
+    var dupInqCount  = dupBoard.inq  + dupChat.inq;
 
-    // 평균 응답 시간 — 슬랙 techbot 값 우선
+    // ── 평균 응답 시간: 게시판=슬랙, 채팅=data.js ──
     function bizHours(startStr, endStr) {
       var BIZ_S = 9, BIZ_E = 18;
       var s = new Date(startStr), e = new Date(endStr);
@@ -1349,44 +1390,55 @@ function updateKPIBadges(records, lw, chatRecords) {
       }
       return ms / 3600000;
     }
+    var avgHBoard = slackLw ? slackLw.avg_rt : (function(){
+      var rtsB = lwBoardRecs
+        .filter(function(r){ return r['답변 상태'] === '답변완료' && r['답변 일시'] && r['문의 일시']; })
+        .map(function(r){ return bizHours(r['문의 일시'], r['답변 일시']); })
+        .filter(function(h){ return h >= 0 && h < 90; });
+      return rtsB.length ? Math.round(rtsB.reduce(function(a,b){ return a+b; },0)/rtsB.length*10)/10 : 0;
+    })();
+    var rtsChat = lwChatRecs
+      .filter(function(r){ return r['답변 상태'] === '답변완료' && r['답변 일시'] && r['문의 일시']; })
+      .map(function(r){ return bizHours(r['문의 일시'], r['답변 일시']); })
+      .filter(function(h){ return h >= 0 && h < 90; });
+    var avgHChat = rtsChat.length ? Math.round(rtsChat.reduce(function(a,b){ return a+b; },0)/rtsChat.length*10)/10 : 0;
+    // 종합 평균: 가중 평균 (게시판 건수 기준)
     var rts = lwRecs
-      .filter(function(r) { return r['답변 상태'] === '답변완료' && r['답변 일시'] && r['문의 일시']; })
-      .map(function(r) { return bizHours(r['문의 일시'], r['답변 일시']); })
-      .filter(function(h) { return h >= 0 && h < 90; });
+      .filter(function(r){ return r['답변 상태'] === '답변완료' && r['답변 일시'] && r['문의 일시']; })
+      .map(function(r){ return bizHours(r['문의 일시'], r['답변 일시']); })
+      .filter(function(h){ return h >= 0 && h < 90; });
     var avgH = slackLw ? slackLw.avg_rt
-             : (rts.length ? Math.round(rts.reduce(function(a, b) { return a + b; }, 0) / rts.length * 10) / 10 : 0);
+             : (rts.length ? Math.round(rts.reduce(function(a,b){ return a+b; },0)/rts.length*10)/10 : 0);
     var rtGrade = avgH <= 4 ? '빠름' : avgH <= 9 ? '보통' : '느림';
 
     // DOM 업데이트
     var bp1 = document.getElementById('badge-period-1');
     if (bp1) bp1.textContent = '전주 ' + periodStr;
 
-    var lwBoard = lwRecs.filter(function(r){ return r['문의 채널'] === '게시판'; }).length;
-    var lwChat  = lwRecs.filter(function(r){ return r['문의 채널'] !== '게시판'; }).length;
-
     var kvWt = document.getElementById('kv-weekly-total');
     if (kvWt) kvWt.textContent = lwTotal.toLocaleString();
     var ksWt = document.getElementById('ks-weekly-total');
-    if (slackLw) {
-      if (ksWt) ksWt.textContent = '슬랙 리포트 기준 · 게시판 ' + lwBoard + ' · 채팅 ' + lwChat + '건(raw)';
-    } else {
-      if (ksWt) ksWt.textContent = '게시판 ' + lwBoard + ' · 채팅 ' + lwChat + '건';
-    }
+    if (ksWt) ksWt.textContent = '게시판(슬랙) ' + lwBoardTotal + ' · 채팅 ' + lwChat + '건';
 
     var kvRr = document.getElementById('kv-response-rate');
     if (kvRr) kvRr.textContent = lwRate;
     var bdgRr = document.getElementById('badge-response-rate');
     if (bdgRr) bdgRr.textContent = rateGrade;
+    var ksRr = document.getElementById('ks-response-rate');
+    if (ksRr) ksRr.textContent = '게시판(슬랙) ' + lwRateBoard + '% · 채팅 ' + lwRateChat + '%';
 
+    var avgMin      = Math.round(avgH * 60);
+    var avgMinBoard = Math.round(avgHBoard * 60);
+    var avgMinChat  = Math.round(avgHChat * 60);
     var kvArt = document.getElementById('kv-avg-rt');
-    if (kvArt) kvArt.textContent = avgH;
+    if (kvArt) kvArt.textContent = avgMin;
     var ksArt = document.getElementById('ks-avg-rt');
-    if (ksArt) ksArt.textContent = '운영시간(9-18시) 기준 · 완료 ' + rts.length + '건';
+    if (ksArt) ksArt.textContent = '게시판(슬랙) ' + avgMinBoard + '분 · 채팅 ' + avgMinChat + '분';
 
     var kvDup = document.getElementById('kv-dup');
     if (kvDup) kvDup.textContent = dupCustCount.toLocaleString();
     var ksDup = document.getElementById('ks-dup');
-    if (ksDup) ksDup.textContent = dupInqCount + '건 중복 발생 · ' + periodStr;
+    if (ksDup) ksDup.textContent = '게시판 ' + dupBoard.cust + '명(' + dupBoard.inq + '건) · 채팅 ' + dupChat.cust + '명(' + dupChat.inq + '건)';
 
     // ── 전전주 비교 데이터 계산 — 슬랙 데이터 우선 ──
     var pw2Done, pw2Rate, pw2AvgH;
@@ -1437,15 +1489,15 @@ function updateKPIBadges(records, lw, chatRecords) {
     }
 
     // 평균 응답 시간 인사이트
-    var rtDiff = Math.round((avgH - pw2AvgH) * 10) / 10;
+    var rtDiffMin = Math.round((avgH - pw2AvgH) * 60);
     var rtInsight;
     if (avgH === 0) rtInsight = '—';
     else if (avgH <= 1) rtInsight = '✅ 1시간 내 응답 — 최우수';
     else if (avgH > 9)  rtInsight = '⚠️ 운영 1일 초과 — 처리 속도 점검';
-    else if (Math.abs(rtDiff) < 0.1) rtInsight = '→ 전전주와 동일 (' + avgH + 'h / ' + rtGrade + ')';
+    else if (Math.abs(rtDiffMin) < 5) rtInsight = '→ 전전주와 동일 (' + avgMin + '분 / ' + rtGrade + ')';
     else {
-      var rtWord = rtDiff < 0 ? '단축 — 개선' : '증가 — 악화';
-      rtInsight = (rtDiff < 0 ? '↓' : '↑') + ' 전전주 대비 ' + (rtDiff > 0 ? '+' : '') + rtDiff + 'h ' + rtWord;
+      var rtWord = rtDiffMin < 0 ? '단축 — 개선' : '증가 — 악화';
+      rtInsight = (rtDiffMin < 0 ? '↓' : '↑') + ' 전전주 대비 ' + (rtDiffMin > 0 ? '+' : '') + rtDiffMin + '분 ' + rtWord;
     }
 
     // 중복 문의 인사이트
@@ -2739,6 +2791,64 @@ function renderSlackGrowth() {
   el.innerHTML = html;
 }
 
+function renderWeeklyTrendCharts() {
+  var scw = window._SLACK_CS_WEEKLY || [];
+  if (!scw.length) return;
+
+  /* ── 1. 주간 문의 건수 바 차트 (tC) ── */
+  var tcEl = document.getElementById('tC');
+  if (tcEl) {
+    var maxVal = Math.max.apply(null, scw.map(function(w){ return w.total; })) || 1;
+    var avg    = Math.round(scw.reduce(function(s,w){ return s+w.total; },0) / scw.length);
+    var bars   = scw.map(function(w, i) {
+      var isLast = i === scw.length - 1;
+      var pct    = Math.round(w.total / maxVal * 86); // max bar height 86px
+      var bg     = isLast ? '#93c5fd' : '#2563eb';
+      var lbl    = w.start.slice(5).replace('-', '/'); // MM/DD
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">'
+        + '<div style="font-size:9px;color:#64748b;font-weight:700">' + w.total + '</div>'
+        + '<div style="width:100%;height:' + pct + 'px;background:' + bg + ';border-radius:3px 3px 0 0"></div>'
+        + '<div style="font-size:8px;color:#94a3b8;white-space:nowrap">' + lbl + '</div>'
+        + '</div>';
+    }).join('');
+    tcEl.innerHTML = '<div style="display:flex;align-items:flex-end;gap:3px;height:90px;padding-top:4px">' + bars + '</div>'
+      + '<div style="margin-top:6px;font-size:10px;color:#f59e0b">— 평균 ' + avg + '건 (슬랙 기준)</div>';
+  }
+
+  /* ── 2. 응답 완료율 도넛 (dC) ── */
+  var dcEl = document.getElementById('dC');
+  if (dcEl) {
+    var totalAll  = scw.reduce(function(s,w){ return s + w.total; }, 0);
+    var unhandAll = scw.reduce(function(s,w){ return s + w.unanswered; }, 0);
+    var doneAll   = totalAll - unhandAll;
+    var rate      = totalAll > 0 ? Math.round(doneAll / totalAll * 1000) / 10 : 0;
+    var deg       = Math.round(rate / 100 * 360);
+    dcEl.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:8px 0">'
+      + '<div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(#22c55e ' + deg + 'deg,#ef4444 ' + deg + 'deg);display:flex;align-items:center;justify-content:center">'
+      + '<div style="width:68px;height:68px;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center">'
+      + '<div style="font-size:18px;font-weight:900;color:#1e293b">' + rate + '%</div>'
+      + '</div></div>'
+      + '<div style="margin-top:8px;font-size:11px;color:#64748b">'
+      + '<span id="donut-label">완료 ' + doneAll.toLocaleString() + '건 / 미처리 ' + unhandAll + '건</span>'
+      + '</div></div>'
+      + '<div style="text-align:center;margin-top:8px;font-size:11px;color:#64748b;">'
+      + '<span style="color:#22c55e;margin-right:12px;">● 완료</span><span style="color:#ef4444;">● 미처리</span></div>';
+  }
+
+  /* ── 3. 문의 유형 Top 5 (t5) — uhData 활용, 건수 기준 정렬 ── */
+  var t5El = document.getElementById('t5');
+  if (t5El && typeof uhData !== 'undefined' && uhData.length) {
+    var sorted = uhData.slice().sort(function(a,b){ return b.total - a.total; }).slice(0, 5);
+    var maxT   = sorted[0].total;
+    t5El.innerHTML = sorted.map(function(d) {
+      var pct = Math.round(d.total / maxT * 100);
+      return '<div class="br"><div class="bl2">' + d.cat + '</div>'
+        + '<div class="bt"><div class="bf" style="width:' + pct + '%"></div></div>'
+        + '<div class="bc">' + d.total + '건</div></div>';
+    }).join('');
+  }
+}
+
 window.addEventListener('DOMContentLoaded', function(){
   renderConvMonthlyChart();
   renderMonthlyTrendSection();
@@ -2746,6 +2856,7 @@ window.addEventListener('DOMContentLoaded', function(){
   renderSlackGrowth();
   render3StepDashboard(); /* slackData만으로 렌더 — initConvData(data.js) 불필요 */
   renderWeeklySignal();  /* 핵심 신호 요약 카드 */
+  renderWeeklyTrendCharts(); /* tC·t5·dC 동적 렌더 */
 
   /* pg-c가 hidden 상태에서 Chart.js 초기화 → 캔버스 크기 0px 버그 방지
      탭 선택 시 재렌더링 */

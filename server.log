@@ -1,0 +1,19 @@
+
+  Aligo Update Server running at http://localhost:7799
+
+node:_http_outgoing:642
+    throw new ERR_HTTP_HEADERS_SENT('set');
+          ^
+
+Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:642:11)
+    at setCORS (C:\Users\AligoCX\Documents\Claude\Projects\운영 지표 자동화\update-server.js:13:7)
+    at sendJSON (C:\Users\AligoCX\Documents\Claude\Projects\운영 지표 자동화\update-server.js:18:3)
+    at Server.<anonymous> (C:\Users\AligoCX\Documents\Claude\Projects\운영 지표 자동화\update-server.js:216:18)
+    at Server.emit (node:events:509:28)
+    at parserOnIncoming (node:_http_server:1213:12)
+    at HTTPParser.parserOnHeadersComplete (node:_http_common:125:17) {
+  code: 'ERR_HTTP_HEADERS_SENT'
+}
+
+Node.js v24.15.0
